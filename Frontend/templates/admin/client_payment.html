@@ -1,0 +1,131 @@
+{% extends 'layouts/index.html' %}
+
+{% block content %}
+<div class="main flex">
+    <div class="form-container container">
+        <div class="title">Client Payment Entry</div>
+        <form method="POST" class="flex-col">
+            <div class="form-group">
+                <label for="client_name">Client Name</label>
+                <select name="client_name" id="client_name" onchange="loadProjects(this.value)">
+                    <option selected disabled>Client Name</option>
+                    {% for item in clients %}
+                    <option value="{{item}}">{{item}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="project_name">Project Name</label>
+                <select name="project_name" id="project_name" required>
+                    <option selected disabled>Project Name</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="payment_date">Payment Date</label>
+                <input type="date" id="payment_date" name="payment_date" required>
+            </div>
+            <script>
+                  function loadProjects(clientName) {
+        if (!clientName) return;
+        
+        const projectSelect = document.getElementById('project_name');
+
+        projectSelect.innerHTML = '<option selected disabled>Select Project</option>';
+
+        fetch(`/get-projects/${clientName}`)
+            .then(response => response.json())
+            .then(data => {
+                data.projects.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project;
+                    option.textContent = project;
+                    projectSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading projects:', error);
+            });
+        }
+
+ 
+            </script>
+            
+            <div class="form-group">
+                <label for="amount">Payment Amount (₹)</label>
+                <input type="number" id="amount" name="amount" min="0" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="mode_of_pay">Mode of Payment</label>
+                <select id="mode_of_pay" name="mode_of_pay" required onchange="togglePaymentDetails()">
+                    <option value="">Select Payment Mode</option>
+                    <option value="cash">Cash</option>
+                    <option value="cheque">Cheque</option>
+                    <option value="upi">UPI</option>
+                    <option value="netbanking">Net Banking</option>
+                </select>
+            </div>
+
+            <!-- Dynamic payment details fields -->
+            <div id="cheque_details" class="form-group payment-details" style="display: none;">
+                <label for="cheque_no">Cheque Number</label>
+                <input type="text" id="cheque_no" name="cheque_no" 
+                       pattern="[0-9]{6,}" title="Please enter a valid cheque number">
+            </div>
+
+            <div id="online_details" class="form-group payment-details" style="display: none;">
+                <label for="transaction_id">Transaction ID</label>
+                <input type="text" id="transaction_id" name="transaction_id">
+            </div>
+            
+            <div class="button-group">
+                <button type="reset" class="clear-btn" onclick="resetForm()">Clear Form</button>
+                <button type="submit" class="submit-btn">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function togglePaymentDetails() {
+        const paymentMode = document.getElementById('mode_of_pay').value;
+        const chequeDetails = document.getElementById('cheque_details');
+        const onlineDetails = document.getElementById('online_details');
+        
+        // Hide all payment detail fields first
+        chequeDetails.style.display = 'none';
+        onlineDetails.style.display = 'none';
+        
+        // Remove required attribute from all inputs
+        document.getElementById('cheque_no').required = false;
+        document.getElementById('transaction_id').required = false;
+        
+        // Show relevant fields based on payment mode
+        switch(paymentMode) {
+            case 'cheque':
+                chequeDetails.style.display = 'block';
+                document.getElementById('cheque_no').required = true;
+                break;
+            case 'upi':
+            case 'netbanking':
+                onlineDetails.style.display = 'block';
+                document.getElementById('transaction_id').required = true;
+                break;
+        }
+    }
+
+    function resetForm() {
+        const chequeDetails = document.getElementById('cheque_details');
+        const onlineDetails = document.getElementById('online_details');
+        chequeDetails.style.display = 'none';
+        onlineDetails.style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('payment_date').value = today;
+    });
+</script>
+{% endblock %} 

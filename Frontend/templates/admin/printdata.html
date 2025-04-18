@@ -1,0 +1,360 @@
+{% extends 'layouts/index.html' %}  
+{% block content %}
+<div class="main" id="bill">
+    <div class="container">
+        <div class="title">
+            Project Details: {{ project_dict.p_name }}
+            {% if from_date and to_date %}
+            <div class="date-range">
+                Audit Period: {{ from_date }} to {{ to_date }}
+            </div>
+            {% endif %}
+        </div>
+        
+        <section class="project-details-section">
+            <h2>Basic Information</h2>
+            <div class="details-table-container">
+                <table class="details-table">
+                    <tr>
+                        <th>Project Name</th>
+                        <td>{{ project_dict.p_name }}</td>
+                        <th>Client Name</th>
+                        <td>{{ uid }}</td>
+                    </tr>
+                    <tr>
+                        <th>Location</th>
+                        <td>{{ project_dict.p_location }}</td>
+                        <th>Project Type</th>
+                        <td>{{ project_dict.project_type }}</td>
+                    </tr>
+                    <tr>
+                        <th>Start Date</th>
+                        <td>{{ project_dict.start_date }}</td>
+                        <th>Expected Completion</th>
+                        <td>{{ project_dict.end_date }}</td>
+                    </tr>
+                    <tr>
+                        <th>Design Concept</th>
+                        <td colspan="3">{{ project_dict.design_concept }}</td>
+                    </tr>
+                    <tr>
+                        <th>Description</th>
+                        <td colspan="3">{{ project_dict.desc_of_work }}</td>
+                    </tr>
+                    <tr>
+                        <th>Services</th>
+                        <td colspan="3">{{ project_dict.services }}</td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        <section class="project-details-section">
+            <h2>Financial Summary</h2>
+            <div class="details-table-container">
+                <table class="details-table">
+                    <!-- <tr>
+                        <th>Total Budget</th>
+                        <td>₹{{ project_dict.total_budget }}</td>
+                        <th>Design Fee</th>
+                        <td>₹{{ project_dict.design_fee }}</td>
+                    </tr>
+                    <tr> -->
+                        <!-- <th>Labour Fee</th>
+                        <td>₹{{ project_dict.labour_fee }}</td>
+                        <th>Material Cost</th>
+                        <td>₹{{ project_dict.material_cost }}</td>
+                    </tr> -->
+                    <tr>
+                        <th>Contractor Expenses</th>
+                        <td>₹{{ financial_summary.contractor_expenses }}</td>
+                        <th>Supplier Expenses</th>
+                        <td>₹{{ financial_summary.supplier_expenses }}</td>
+                    </tr>
+                    <tr>
+                        <th>Supervisor Expenses</th>
+                        <td>₹{{ financial_summary.supervisor_expenses }}</td>
+                        <th>Total Expenses</th>
+                        <td>₹{{ financial_summary.total_expenses }}</td>
+                    </tr>
+                    <tr>
+                        <th>Payments Received</th>
+                        <td>₹{{ financial_summary.payments_received }}</td>
+                        <th>Balance</th>
+                        <td>₹{{ financial_summary.balance }}</td>
+                    </tr>
+                </table>
+            </div>
+        </section>
+
+        {% if contractor_bills %}
+        <section class="project-details-section">
+            <h2>Contractor Bills</h2>
+            <div class="details-table-container">
+                <table class="details-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Contractor</th>
+                            <th>Amount</th>
+                            <th>GST</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in contractor_bills %}
+                        <tr>
+                            <td>{{ bill.bill_date }}</td>
+                            <td>{{ bill.cont_name }}</td>
+                            <td>₹{{ bill.bill_amount }}</td>
+                            <td>₹{{ bill.gst_amount }}</td>
+                            <td>₹{{ bill.total_amount }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if supplier_bills %}
+        <section class="project-details-section">
+            <h2>Supplier Bills</h2>
+            <div class="details-table-container">
+                <table class="details-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Supplier</th>
+                            <th>Amount</th>
+                            <th>GST</th>
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in supplier_bills %}
+                        <tr>
+                            <td>{{ bill.bill_date }}</td>
+                            <td>{{ bill.supplier_name }}</td>
+                            <td>₹{{ bill.bill_amount }}</td>
+                            <td>₹{{ bill.gst_amount }}</td>
+                            <td>₹{{ bill.total_amount }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if supervisor_expenses %}
+        <section class="project-details-section">
+            <h2>Supervisor Expenses</h2>
+            <div class="details-table-container">
+                <table class="details-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Supervisor</th>
+                            <th>Project</th>
+                            <th>Amount</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for expense in supervisor_expenses %}
+                        <tr>
+                            <td>{{ expense.date }}</td>
+                            <td>{{ expense.supervisor }}</td>
+                            <td>{{ expense.project }}</td>
+                            <td>₹{{ expense.amount }}</td>
+                            <td>{{ expense.description }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+
+        {% if client_payments %}
+        <section class="project-details-section">
+            <h2>Client Payments</h2>
+            <div class="details-table-container">
+                <table class="details-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Payment Mode</th>
+                            <th>Payment Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in client_payments %}
+                        <tr>
+                            <td>{{ payment.payment_date }}</td>
+                            <td>₹{{ payment.amount }}</td>
+                            <td>{{ payment.mode_of_pay }}</td>
+                            <td>
+                                {% if payment.mode_of_pay == 'cheque' and payment.cheque_no %}
+                                    Cheque No: {{ payment.cheque_no }}
+                                {% elif payment.mode_of_pay in ['upi', 'netbanking'] and payment.transaction_id %}
+                                    Transaction ID: {{ payment.transaction_id }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        {% endif %}
+    </div>
+    
+    <div class="print-controls">
+        <button id="print-btn" class="print-btn">Print Report</button>
+    </div>
+</div>
+
+<style>
+.main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 5px var(--shadow);
+    padding: 20px;
+}
+
+.title {
+    text-align: center;
+    margin-bottom: 30px;
+    color: var(--primary);
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.project-details-section {
+    margin-bottom: 30px;
+    background-color: var(--container-bg);
+    border-radius: 10px;
+    box-shadow: 0 2px 5px var(--shadow);
+    overflow: hidden;
+}
+
+.project-details-section h2 {
+    background-color: var(--primary);
+    color: white;
+    padding: 15px;
+    margin: 0;
+    font-size: 18px;
+    text-align: center;
+}
+
+.details-table-container {
+    padding: 15px;
+    overflow-x: auto;
+    display: flex;
+    justify-content: center;
+}
+
+.details-table {
+    width: 100%;
+    max-width: 1000px;
+    border-collapse: collapse;
+    margin: 0 auto;
+}
+
+.details-table th, .details-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--light-accent);
+}
+
+.details-table th {
+    background-color: #f5f5f5;
+    font-weight: 600;
+    color: var(--primary);
+    width: 25%;
+}
+
+.print-controls {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.print-btn {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.print-btn:hover {
+    background-color: var(--secondary);
+}
+
+.date-range {
+    font-size: 16px;
+    color: var(--primary);
+    margin-top: 10px;
+    font-weight: 500;
+    text-align: center;
+}
+
+@media print {
+    .nav, .print-controls, .nav-menu, .menu-toggle {
+        display: none !important;
+    }
+    
+    .container {
+        box-shadow: none;
+        margin: 0;
+        padding: 0;
+    }
+    
+    .project-details-section {
+        page-break-inside: avoid;
+        margin-bottom: 20px;
+        box-shadow: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
+    .details-table th, .details-table td {
+        padding: 8px;
+        font-size: 14px;
+    }
+    
+    .title {
+        font-size: 20px;
+    }
+}
+</style>
+
+<script>
+document.getElementById('print-btn').addEventListener('click', function() {
+    window.print();
+});
+</script>
+{% endblock %}

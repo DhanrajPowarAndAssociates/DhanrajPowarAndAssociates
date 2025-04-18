@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/home.css') }}">
+    <title>Report Expenditure</title>
+</head>
+<body>
+    {% include 'layouts/sindex.html' %}
+    <div class="task-table" style="max-width: 800px; margin: 80px auto 20px; padding: 20px;">
+        <h2>Total Expenditure</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                        <th style="background-color: var(--primary); color: white; padding: 12px; text-align: left;">Date</th>
+                        <th style="background-color: var(--primary); color: white; padding: 12px; text-align: left;">Project</th>
+                        <th style="background-color: var(--primary); color: white; padding: 12px; text-align: left;">Amount</th>
+                        <th style="background-color: var(--primary); color: white; padding: 12px; text-align: left;">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if expenditures %}
+                    {% for exp in expenditures %}
+                    <tr style="border-bottom: 1px solid var(--light-accent);">
+                        <td style="padding: 12px; text-align: left;">{{ exp.date }}</td>
+                        <td style="padding: 12px; text-align: left;">{{ exp.project }}</td>
+                        <td style="padding: 12px; text-align: left;">₹{{ exp.amount }}</td>
+                        <td style="padding: 12px; text-align: left;">{{ exp.description }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 15px;">No expenditure records found.</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html> 

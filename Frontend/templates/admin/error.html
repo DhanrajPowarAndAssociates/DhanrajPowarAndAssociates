@@ -1,0 +1,13 @@
+{% extends 'layouts/main.html' %}
+{% block content %}
+<div class="container form-container" style="margin-top: 80px; text-align: center;">
+    <h2 style="color: var(--primary); margin-bottom: 20px;">Error Occurred</h2>
+    <div style="background-color: #ffebee; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <p style="color: #d32f2f; font-weight: 500;">{{ error_message }}</p>
+    </div>
+    <p>Please try again or contact the administrator if the problem persists.</p>
+    <div style="margin-top: 30px;">
+        <a href="{{ url_for('admin.index') }}" class="btn-submit" style="text-decoration: none; display: inline-block;">Return to Home</a>
+    </div>
+</div>
+{% endblock %} 

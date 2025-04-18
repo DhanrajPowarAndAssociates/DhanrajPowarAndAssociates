@@ -1,0 +1,44 @@
+{% extends 'layouts/index.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <section class="task-table">
+            <h2>Task Overview</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Supervisor Name</th>
+                        <th>Project</th>
+                        <th>Description</th>
+                        <th>Start Date</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for task in tasks %}
+                    <tr>
+                        <td>{{ task.supervisor_name }}</td>
+                        <td>{{ task.project }}</td>
+                        <td>{{ task.description }}</td>
+                        <td>{{ task.start_date }}</td>
+                        <td><span class="status {{ task.status|lower }}">{{ task.status }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    console.log("View Tasks Page Loaded!");
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/home.css') }}">
+    {% block style %} {% endblock %}
+    <title>Tracker</title>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="GP Logo">
+            </div>
+            <div class="bold">
+                DHANRAJ POWAR & ASSOCIATES
+            </div>
+        </div>
+        <div class="nav-right flex">
+            {% if session.get('admin_logged_in') %}
+                <a href="{{ url_for('admin.logout') }}" class="logout-btn">Logout</a>
+            {% endif %}
+            <button class="menu-toggle" id="menuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="nav-menu" id="navMenu">
+        <ul class="menu-tabs">
+            <li class="menu-tab">
+                <a href="{{ url_for('admin.supervisor_dashboard_view', supervisor_name=session.get('username')) }}" class="tab-link">Dashboard</a>
+            </li>
+            <li class="menu-tab">
+                <a href="{{ url_for('admin.supervisor_expenditure', supervisor_name=session.get('username')) }}">Report Expenditure</a>
+                <a href="{{ url_for('admin.supervisor_expenditurelist', supervisor_name=session.get('username')) }}">Total Expenditure</a>  
+            </li>
+        </ul>
+    </div>
+
+    {% block content %}
+    {% endblock %}
+
+    <!-- Add a small inline script to ensure dropdown functionality -->
+    <script>
+        // Make sure dropdowns work on hover
+        document.querySelectorAll('.menu-tab').forEach(tab => {
+            tab.addEventListener('mouseenter', () => {
+                const dropdown = tab.querySelector('.dropdown-content');
+                if (dropdown) {
+                    dropdown.style.opacity = '1';
+                    dropdown.style.visibility = 'visible';
+                    dropdown.style.transform = 'translateX(0)';
+                }
+            });
+            
+            tab.addEventListener('mouseleave', () => {
+                const dropdown = tab.querySelector('.dropdown-content');
+                if (dropdown) {
+                    dropdown.style.opacity = '';
+                    dropdown.style.visibility = '';
+                    dropdown.style.transform = '';
+                }
+            });
+        });
+
+        // Functionality for the sidebar toggle
+        const menuToggle = document.getElementById('menuToggle');
+        const navMenu = document.getElementById('navMenu');
+
+        menuToggle.addEventListener('click', () => {
+            menuToggle.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!menuToggle.contains(e.target) && !navMenu.contains(e.target)) {
+                menuToggle.classList.remove('active');
+                navMenu.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

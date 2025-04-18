@@ -1,0 +1,37 @@
+{% extends 'layouts/index.html' %}
+
+{% block content %}
+<div class="main flex-col">
+
+    <div class="container full-width">
+        <div class="title">Client Dashboard</div>
+        <div class="client-cards-container">
+            {% for client in client_details %}
+            <div class="client-info-card">
+                <div class="client-card-header">
+                    <h3>{{ client['c_name']}}</h3>
+                </div>
+                <div class="client-card-body">
+                    <div class="client-info-group">
+                        <i class="fas fa-envelope"></i>
+                        <span>{{ client['c_email']}}</span>
+                    </div>
+                    <div class="client-info-group">
+                        <i class="fas fa-phone"></i>
+                        <span>{{ client['c_phone']}}</span>
+                    </div>
+                    <div class="client-info-group">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>{{ client['c_address']}}</span>
+                    </div>
+                </div>
+                <div class="client-card-footer">
+                    <a href="projects/{{client['c_name']}}"><button class="client-btn view">View Projects</button></a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

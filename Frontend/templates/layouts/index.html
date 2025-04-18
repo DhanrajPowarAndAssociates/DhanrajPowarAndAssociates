@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="{{ url_for('static', filename='images/logo.jpg') }}" type="jpg">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style/home.css') }}">
+    {% block style %} {% endblock %}
+    <title>{% block title %}DHANRAJ POWAR & ASSOCIATES{% endblock %}</title></title>
+</head>
+<body>
+    <div class="nav">
+        <a href="/admin/dashboard">
+        <div class="nav-left">
+                <div class="logo">
+                    <img src="{{ url_for('static', filename='images/logo.jpg') }}" alt="DC">
+                </div>
+                <div class="bold">
+                    DHANRAJ POWAR & ASSOCIATES
+                </div>
+            </div>
+        </a>
+        <div class="nav-right flex">
+            {% if session.get('admin_logged_in') %}
+                <a href="{{ url_for('admin.logout') }}" class="logout-btn">Logout</a>
+            {% endif %}
+            <button class="menu-toggle" id="menuToggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </div>
+
+    <div class="nav-menu" id="navMenu">
+        <ul class="menu-tabs">
+            <li class="menu-tab">
+                <a href="/admin/dashboard" class="tab-link">Dashboard</a>
+            </li>
+            <li class="menu-tab">
+                <a href="#" class="tab-link">New</a>
+                <div class="dropdown-content">
+                    <a href="/admin/newuser">New Client</a>
+                    <a href="/admin/newsupplier">New Supplier</a>
+                    <a href="/admin/newcontractor">New Contractor</a>
+                    <a href="/admin/newsupervisor">New Supervisor</a>
+                    <a href="/admin/newproject">New Project</a>
+                </div>
+            </li>
+            <li class="menu-tab">
+                <a href="#" class="tab-link">Payment</a>
+                <div class="dropdown-content">
+                    <a href="/admin/supplier-payment">Supplier Bill Entry</a>
+                    <a href="/admin/contractor-payment">Contractor Bill Entry</a>
+                    <a href="/admin/client-payment">Client Payment</a>
+                </div>
+            </li>
+            <li class="menu-tab">
+                <a href="{{ url_for('admin.supervisor_dashboard') }}" class="">Supervisor</a>
+                <div class="dropdown-content">
+                    <a href="{{ url_for('admin.supervisor_dashboard') }}">Supervisor Dashboard</a>
+                    <a href="{{ url_for('admin.view_tasks') }}">View Tasks</a>
+                    <a href="{{ url_for('admin.assign_task') }}">Assign Task</a>
+                    <a href="{{ url_for('admin.all_expenditures') }}">Supervisor Expenditures</a>
+                </div>
+            </li>
+            <li class="menu-tab">
+                <a href="{{ url_for('admin.add_admin_user') }}" class="">Add Admin / Supervisor</a>
+            </li>
+        </ul>
+    </div>
+
+    {% block content %}
+    {% endblock %}
+
+    <script>
+        const menuToggle = document.getElementById('menuToggle');
+        const navMenu = document.getElementById('navMenu');
+
+        menuToggle.addEventListener('click', () => {
+            menuToggle.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!menuToggle.contains(e.target) && !navMenu.contains(e.target)) {
+                menuToggle.classList.remove('active');
+                navMenu.classList.remove('active');
+            }
+        });
+    </script>
+</body>
+</html>

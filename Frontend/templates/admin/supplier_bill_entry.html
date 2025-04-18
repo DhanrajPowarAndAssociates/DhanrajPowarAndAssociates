@@ -1,0 +1,156 @@
+{% extends 'layouts/index.html' %}
+
+{% block content %}
+<div class="main flex">
+    <div class="form-container container">
+        <div class="title">Supplier Bill Entry</div>
+        <form method="POST" class="flex-col">
+            <div class="form-group">
+                <label for="supplier_name">Supplier Name</label>
+                <select name="supplier_name" id="supplier_name" required>
+                    <option selected disabled>Select Supplier</option>
+                    {% for item in supplier %}
+                    <option value="{{item}}">{{item}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="client_name">Client Name</label>
+                <select name="client_name" id="client_name" required onchange="loadProjects(this.value)">
+                    <option selected disabled>Select Client</option>
+                    {% for item in clients %}
+                    <option value="{{item}}">{{item}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="project_name">Project Name</label>
+                <select name="project_name" id="project_name" required >
+                    <option selected disabled>Select Project</option>
+                    {% for item in projects %}
+                    <option value="{{item}}">{{item}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <script>
+        function loadProjects(clientName) {
+        if (!clientName) return;
+        const projectSelect = document.getElementById('project_name');
+        projectSelect.innerHTML = '<option selected disabled>Select Project</option>';
+        
+        fetch(`/get-projects/${clientName}`)
+            .then(response => response.json())
+            .then(data => {
+                data.projects.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project;
+                    option.textContent = project;
+                    projectSelect.appendChild(option);
+                });
+            })
+            .catch(error => {
+                console.error('Error loading projects:', error);
+            });
+    }
+            </script>
+
+            <div class="form-group">
+                <label for="invoice_number">Invoice Number</label>
+                <input type="text" id="invoice_number" name="invoice_number" 
+                       required placeholder="Enter Invoice Number">
+            </div>
+
+            <div class="form-group">
+                <label for="bill_date">Bill Date</label>
+                <input type="date" id="bill_date" name="bill_date" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="amount">Bill Amount (₹)</label>
+                <input type="number" id="amount" name="amount" 
+                       min="0" required onchange="calculateGST()"
+                       onkeyup="calculateGST()">
+            </div>
+            
+            <div class="form-group">
+                <label for="gst_percentage">GST Percentage (%)</label>
+                <select id="gst_percentage" name="gst_percentage" required onchange="calculateGST()">
+                    <option value="0">0%</option>
+                    <option value="5">5%</option>
+                    <option value="12">12%</option>
+                    <option value="18" selected>18%</option>
+                    <option value="28">28%</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>GST</label>
+                <div class="gst-grid">
+                    <div class="gst-item">
+                        <label for="cgst_amount">CGST Amount (₹)</label>
+                        <input type="number" id="cgst_amount" name="cgst_amount" 
+                               readonly value="0">
+                    </div>
+                    <div class="gst-item">
+                        <label for="sgst_amount">SGST Amount (₹)</label>
+                        <input type="number" id="sgst_amount" name="sgst_amount" 
+                               readonly value="0">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="total_gst">Total GST Amount (₹)</label>
+                <input type="number" id="total_gst" name="gst_amount" 
+                       readonly value="0">
+            </div>
+            
+            <div class="form-group">
+                <label for="total_amount">Total Amount (₹)</label>
+                <input type="number" id="total_amount" name="total_amount" 
+                       readonly value="0">
+            </div>
+            
+            <input type="hidden" name="gst_percentage" value="18">
+            
+            <div class="button-group">
+                <button type="reset" class="clear-btn" onclick="resetForm()">Clear Form</button>
+                <button type="submit" class="submit-btn">Submit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function calculateGST() {
+        const amount = parseFloat(document.getElementById('amount').value) || 0;
+        const gstPercentage = parseFloat(document.getElementById('gst_percentage').value) || 0;
+        
+        // Calculate CGST and SGST (half of total GST each)
+        const gstRate = gstPercentage / 2;
+        const cgstAmount = (amount * gstRate) / 100;
+        const sgstAmount = (amount * gstRate) / 100;
+        const totalGST = cgstAmount + sgstAmount;
+        const totalAmount = amount + totalGST;
+        
+        document.getElementById('cgst_amount').value = cgstAmount.toFixed(2);
+        document.getElementById('sgst_amount').value = sgstAmount.toFixed(2);
+        document.getElementById('total_gst').value = totalGST.toFixed(2);
+        document.getElementById('total_amount').value = totalAmount.toFixed(2);
+    }
+
+    function resetForm() {
+        setTimeout(() => {
+            calculateGST();
+        }, 0);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('bill_date').value = today;
+        calculateGST();
+    });
+</script>
+{% endblock %} 

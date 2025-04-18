@@ -1,0 +1,53 @@
+{% extends 'layouts/index.html' %}
+{% block content %}
+<div class="dashboard-container">
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <section class="overview">
+            <div class="card">
+                <h3>Total Supervisors</h3>
+                <p>{{ supervisor_details|length }}</p>
+            </div>
+            <div class="card">
+                <h3>Ongoing Projects</h3>
+                <p>5</p>
+            </div>
+            <div class="card">
+                <h3>Pending Approvals</h3>
+                <p>2</p>
+            </div>
+        </section>
+
+        <section class="task-table">
+            <h2>Supervisor List</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Supervisor Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Address</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for supervisor in supervisor_details %}
+                    <tr>
+                        <td>{{ supervisor.super_name }}</td>
+                        <td>{{ supervisor.super_email }}</td>
+                        <td>{{ supervisor.phone }}</td>
+                        <td>{{ supervisor.super_address }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+    </main>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log("Admin Dashboard Loaded!");
+    });
+</script>
+{% endblock %}

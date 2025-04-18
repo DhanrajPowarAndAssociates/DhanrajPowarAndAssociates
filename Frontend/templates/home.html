@@ -1,0 +1,32 @@
+{% extends 'layouts/main.html' %}
+
+{% block style %}
+<link rel="stylesheet" href="{{ url_for('static', filename='style/home.css') }}">
+{% endblock %}
+
+{% block content %}
+    <div class="main flex">
+        <div class="flex-col container">
+            <div class="title">
+                Login as Admin
+            </div>
+            <button onclick="redirect('admin')">
+                LogIn
+            </button>
+        </div>
+        <div class="flex-col container">
+            <div class="title">
+                Login as Contractor
+            </div>
+            <button onclick="redirect('contractor')">
+                LogIn
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function redirect(url){
+            window.location.href = `/${url}`
+        }
+    </script>
+{% endblock %}

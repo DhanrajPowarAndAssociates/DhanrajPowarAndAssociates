@@ -1,0 +1,52 @@
+{% extends 'layouts/index.html' %}
+
+{% block content %}
+<div class="main flex">
+    <div class="form-container container">
+        <div class="title">Client Details</div>
+        <form method="POST" class="flex-col">
+            <div class="form-group">
+                <label for="name">Name of Client</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label>Address</label>
+                <div class="location-fields">
+                    <input type="text" id="address" name="address" 
+                           placeholder="Street Address" required 
+                           class="full-width">
+                    <input type="text" id="city" name="city" 
+                           placeholder="City" required 
+                           class="half-width">
+                    <input type="text" id="state" name="state" 
+                           placeholder="State" required 
+                           class="half-width">
+                    <input type="text" id="pincode" name="pincode" 
+                           placeholder="Pincode" required 
+                           pattern="[0-9]{6}" 
+                           title="Please enter a valid 6-digit pincode"
+                           class="half-width">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="tel" id="phone" name="phone" required 
+                       pattern="[0-9]{10}" 
+                       title="Please enter a valid 10-digit phone number">
+            </div>
+            
+            <div class="button-group">
+                <button type="reset" class="clear-btn">Clear Form</button>
+                <button type="submit" class="submit-btn">Next</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 

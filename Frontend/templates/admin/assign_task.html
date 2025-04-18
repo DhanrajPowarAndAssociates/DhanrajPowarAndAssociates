@@ -1,0 +1,68 @@
+{% extends 'layouts/index.html' %}
+
+{% block content %}
+<div class="dashboard-container">
+
+    <!-- Main Content -->
+    <main class="main-content">
+
+        <section class="assign-task">
+            <h2>Assign a New Task</h2>
+            <form id="taskForm" method="POST" action="{{ url_for('admin.assign_task') }}">
+                <div class="form-group">
+                    <label for="supervisor-name">Supervisor Name</label>
+                    <select name="supervisor-name" id="supervisor-name" required onchange="loadProjects(this.value)">
+                        <option selected disabled>Select Supervisor</option>
+                        {% for item in supervisors %}
+                        <option value="{{item}}">{{item}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="project-name">Project Name</label>
+                    <select name="project-name" id="project-name" required>
+                        <option selected disabled>Select Project</option>
+                        {% for item in projects %}
+                        <option value="{{item}}">{{item}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <script>
+
+                </script>
+                <div class="form-group">
+                    <label for="start-date">Start Date</label>
+                    <input type="date" name="start_date" id="start-date" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="duration">Duration (in days)</label>
+                    <input type="number" name="duration" id="duration" min="1" placeholder="Enter Duration" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Task Description</label>
+                    <textarea name="description" id="description" placeholder="Enter Task Details" required></textarea>
+                </div>
+
+                <button type="submit">Assign Task</button>
+            </form>
+        </section>
+    </main>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Set minimum date as today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById("start-date").min = today;
+
+    // Handle Form Submission
+    document.getElementById("taskForm").addEventListener("submit", function (event) {
+        // Form validation will be handled by the server
+        console.log("Form submitted");
+    });
+});
+</script>
+{% endblock %}

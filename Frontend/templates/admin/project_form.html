@@ -1,0 +1,218 @@
+{% extends 'layouts/index.html' %}
+
+{% block content %}
+<div class="main flex">
+    <div class="form-container container">
+        <div class="title">Project Details</div>
+        <form method="POST" action="/admin/newproject" class="flex-col">
+            <div class="form-group " style="padding-top: 1rem;">
+                <label for="client_name">Client Name</label>
+                <select name="client_name" id="client_name" onclick="">
+                    <option selected disabled>Client Name</option>
+                    {% for item in clients %}
+                    <option value="{{item}}">{{item}}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="project_name">Project Name</label>
+                <input type="text" id="newprojectname" name="project_name"  placeholder="Project Name">
+            </div>
+            
+            <div class="form-group">
+                <label>Project Location</label>
+                <div class="location-fields">
+                    <input type="text" id="p_address" name="p_address" 
+                           placeholder="Street Address" required 
+                           class="full-width">
+                    <input type="text" id="p_city" name="p_city" 
+                           placeholder="City" required 
+                           class="half-width">
+                    <input type="text" id="p_state" name="p_state" 
+                           placeholder="State" required 
+                           class="half-width">
+                    <input type="text" id="p_pincode" name="p_pincode" 
+                           placeholder="Pincode" required 
+                           pattern="[0-9]{6}" 
+                           title="Please enter a valid 6-digit pincode"
+                           class="half-width">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="start_date">Start Date</label>
+                <input type="date" id="start_date" name="start_date" required 
+                       min="{{ today }}" 
+                       onchange="setMinCompletionDate()">
+            </div>
+            
+            <div class="form-group">
+                <label for="completion_date">Expected Completion Date</label>
+                <input type="date" id="completion_date" name="completion_date" required>
+            </div>
+
+            <script>
+                function setMinCompletionDate() {
+                    const startDate = document.getElementById('start_date').value;
+                    const completionDateInput = document.getElementById('completion_date');
+                    completionDateInput.min = startDate;
+                    
+                    if(completionDateInput.value && completionDateInput.value < startDate) {
+                        completionDateInput.value = '';
+                    }
+                }
+                const today = new Date().toISOString().split('T')[0];
+                document.getElementById('start_date').min = today;
+            </script>
+            
+            <div class="form-group">
+                <select name="work_type" id="work_type" required onchange="toggleOtherWorkType()">
+                    <option value="Interior Design">Interior Design</option>
+                    <option value="Residential Civil Work">Residential Civil Work</option>
+                    <option value="Commercial Infrastructure">Commercial Infrastructure</option>
+                    <option value="Installation of Drainage System">Installation of Drainage System</option>
+                    <option value="Reinforced Concrete Structures">Reinforced Concrete Structures</option>
+                    <option value="Site Preparation and Excavation">Site Preparation and Excavation</option>
+                    <option value="Landscaping and Beautification">Landscaping and Beautification</option>
+                    <option value="Building Restoration and Renovation">Building Restoration and Renovation</option>
+                    <option value="Building Demolition and Deconstruction">Building Demolition and Deconstruction</option>
+                    <option value="Sustainability Integration">Sustainability Integration</option>
+                    <option value="others">Others</option>
+                </select>
+                <input type="text" id="other_work_type" name="work_type" style="display: none; margin-top: 10px;" placeholder="Please specify work type">
+            </div>
+
+            <script>
+                function toggleOtherWorkType() {
+                    const workType = document.getElementById('work_type');
+                    const otherInput = document.getElementById('other_work_type');
+                    
+                    if (workType.value === 'others') {
+                        workType.removeAttribute('name');
+                        otherInput.style.display = 'block';
+                        otherInput.required = true;
+                    } else {
+                        workType.setAttribute('name', 'work_type');
+                        otherInput.style.display = 'none';
+                        otherInput.required = false;
+                        otherInput.value = '';
+                    }
+                }
+            </script>
+            <div class="form-group">
+                <label for="description">Description of work</label>
+                <textarea id="description" name="description" required></textarea>
+            </div>
+            <div class="form-group">
+                <label>Project Type</label>
+                <div class="radio-group">
+                    <div class="radio-wrapper">
+                        <input type="radio" id="construction" name="project_type" value="construction" required>
+                        <label for="construction">New Construction</label>
+                    </div>
+                    <div class="radio-wrapper">
+                        <input type="radio" id="renovation" name="project_type" value="renovation">
+                        <label for="renovation">Renovation</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Additional Services</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="materials" name="services[]" value="materials">
+                        <label for="materials">Materials & Finishes</label>
+                    </div>
+                    <div class="checkbox-wrapper">
+                        <input type="checkbox" id="decor" name="services[]" value="decor">
+                        <label for="decor">Decor & Accessories</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Budget Details</label>
+                <div class="budget-section">
+                    <div class="form-group">
+                        <label for="design_fee">Design Fee</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="design_fee" name="design_fee" 
+                                   min="0" value="0" required
+                                   onchange="calculateTotal()" 
+                                   onkeyup="calculateTotal()">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="labour_fee">Labour Fee</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="labour_fee" name="labour_fee" 
+                                   min="0" value="0" required
+                                   onchange="calculateTotal()" 
+                                   onkeyup="calculateTotal()">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="material_cost">Material Cost</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="material_cost" name="material_cost" 
+                                   min="0" value="0" required
+                                   onchange="calculateTotal()" 
+                                   onkeyup="calculateTotal()">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group budget-total-row">
+                        <label for="total_budget">Total Budget</label>
+                        <div class="input-wrapper">
+                            <input type="number" id="total_budget" name="total_budget" 
+                                   readonly value="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="button-group">
+                <button type="reset" class="clear-btn">Clear Form</button>
+                <button type="submit" class="submit-btn">Submit Project</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function calculateTotal() {
+        const designFee = Number(document.getElementById('design_fee').value) || 0;
+        const labourFee = Number(document.getElementById('labour_fee').value) || 0;
+        const materialCost = Number(document.getElementById('material_cost').value) || 0;
+        
+        const total = designFee + labourFee + materialCost;
+        document.getElementById('total_budget').value = total;
+    }
+
+    // Initialize the form
+    document.addEventListener('DOMContentLoaded', function() {
+        calculateTotal();
+    });
+
+    document.querySelector('button[type="reset"]').addEventListener('click', function(e) {
+        setTimeout(() => {
+            calculateTotal();
+            
+            const workType = document.getElementById('work_type');
+            const otherInput = document.getElementById('other_work_type');
+            workType.setAttribute('name', 'work_type');
+            otherInput.style.display = 'none';
+            otherInput.required = false;
+            otherInput.value = '';
+            
+            const completionDateInput = document.getElementById('completion_date');
+            completionDateInput.min = '';
+        }, 0);
+    });
+</script>
+
+{% endblock %} 
