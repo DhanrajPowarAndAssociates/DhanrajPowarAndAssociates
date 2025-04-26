@@ -92,12 +92,15 @@ def new_supplier():
             'gstin': request.form['gstin']
         }
         print("New Supplier Details:", supplier)
-        conn,cur=db_connection()
-        query='''INSERT INTO suppliers_details(cont_name,saddress,email,phone_no,gstin) VALUES (%s,%s,%s,%s,%s)'''
-        cur.execute(query,(supplier['name'],supplier['location'],supplier['email'],supplier['phone'],supplier['gstin']))
-        conn.commit()
-        conn.close()
-        cur.close()
+        try:
+            conn,cur=db_connection()
+            query='''INSERT INTO suppliers_details(cont_name,saddress,email,phone_no,gstin) VALUES (%s,%s,%s,%s,%s)'''
+            cur.execute(query,(supplier['name'],supplier['location'],supplier['email'],supplier['phone'],supplier['gstin']))
+            conn.commit()
+            conn.close()
+            cur.close()
+        except Exception as e:
+            print(f"Error: {e}")
         return redirect(url_for('admin.admin_dashboard'))
     return render_template('admin/contractor_form.html')
 
@@ -418,7 +421,7 @@ def printProject(uid, pname):
         payments_received = sum(payment['amount'] for payment in client_payments) if client_payments else 0
         
         total_expenses = contractor_expenses + supplier_expenses + supervisor_expense_total
-        balance = project_dict.get('total_budget', 0) - total_expenses
+        balance =  payments_received - total_expenses 
         
         financial_summary = {
             'contractor_expenses': contractor_expenses,

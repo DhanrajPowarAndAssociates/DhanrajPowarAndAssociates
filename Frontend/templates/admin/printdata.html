@@ -68,23 +68,35 @@
                     <tr>
                         <th>Contractor Expenses</th>
                         <td>₹{{ financial_summary.contractor_expenses }}</td>
-                        <th>Supplier Expenses</th>
-                        <td>₹{{ financial_summary.supplier_expenses }}</td>
+                        <th>Total Expenses</th>
+                        <td>₹{{ financial_summary.total_expenses }}</td>
+                        
                     </tr>
                     <tr>
                         <th>Supervisor Expenses</th>
                         <td>₹{{ financial_summary.supervisor_expenses }}</td>
-                        <th>Total Expenses</th>
-                        <td>₹{{ financial_summary.total_expenses }}</td>
-                    </tr>
-                    <tr>
                         <th>Payments Received</th>
                         <td>₹{{ financial_summary.payments_received }}</td>
-                        <th>Balance</th>
-                        <td>₹{{ financial_summary.balance }}</td>
+                    </tr>
+                    <tr>
+                        <th>Supplier Expenses</th>
+                        <td>₹{{ financial_summary.supplier_expenses }}</td>
+                        <th>{% if financial_summary.balance < 0 %} Due. Balance {% else %} Adv. Balance {% endif %}</th>
+                        <td id="balancetag">₹ <span id="balance">{{ financial_summary.balance }}</span></td>
                     </tr>
                 </table>
             </div>
+            <script>
+                const balanceele=document.getElementById("balance");
+                const balancetag=document.getElementById("balancetag");
+                let amount=balanceele.textContent;
+                amount=parseInt(amount);
+                if(amount<0){
+                    balancetag.style.color="red";
+                }else{
+                    balancetag.style.color="green";
+                }
+            </script>
         </section>
 
         {% if contractor_bills %}
