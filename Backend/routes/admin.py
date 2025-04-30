@@ -1092,6 +1092,625 @@ def all_expenditures():
     
     return render_template('admin/all_expenditures.html', expenditures=expenditures)
 
+@admin.route('/admin/delete-entries', methods=['GET'])
+@admin_required
+def delete_entries():
+    conn, cur = db_connection()
+    
+    # Clear any existing flash messages when just loading the page
+    session.pop('_flashes', None)
+    
+    # Get all supplier bill entries - using primary key columns that actually exist
+    supplier_query = '''
+        SELECT sbd.bill_date, sbd.cont_name, sbd.clientname, sbd.p_name, sbd.bill_amount, sbd.gst_amount, sbd.total_amount 
+        FROM supplier_bill_details sbd
+        ORDER BY sbd.bill_date DESC
+    '''
+    cur.execute(supplier_query)
+    supplier_bills = []
+    for row in cur.fetchall():
+        # Create a unique identifier by combining fields
+        unique_id = f"{row[0].strftime('%Y%m%d')}_{row[1]}_{row[2]}_{row[3]}"
+        supplier_bills.append({
+            'unique_id': unique_id,
+            'bill_date': row[0].strftime('%Y-%m-%d') if row[0] else '',
+            'supplier_name': row[1],
+            'client_name': row[2],
+            'project_name': row[3],
+            'bill_amount': row[4],
+            'gst_amount': row[5],
+            'total_amount': row[6]
+        })
+    contractor_query = '''
+        SELECT cbd.bill_date, cbd.cont_name, cbd.clientname, cbd.p_name, cbd.bill_amount, cbd.gst_amount, cbd.total_amount
+        FROM contractor_bill_details cbd
+        ORDER BY cbd.bill_date DESC
+    '''
+    cur.execute(contractor_query)
+    contractor_bills = []
+    for row in cur.fetchall():
+        unique_id = f"{row[0].strftime('%Y%m%d')}_{row[1]}_{row[2]}_{row[3]}"
+        contractor_bills.append({
+            'unique_id': unique_id,
+            'bill_date': row[0].strftime('%Y-%m-%d') if row[0] else '',
+            'contractor_name': row[1],
+            'client_name': row[2],
+            'project_name': row[3],
+            'bill_amount': row[4],
+            'gst_amount': row[5],
+            'total_amount': row[6]
+        })
+    payment_query = '''
+        SELECT pd.date, pd.clientname, pd.project_name, pd.amount, pd.mode_of_payment, pd.cheque_no, pd.transaction_id
+        FROM payment_details pd
+        ORDER BY pd.date DESC
+    '''
+    cur.execute(payment_query)
+    client_payments = []
+    for row in cur.fetchall():
+        # Create a unique identifier by combining fields
+        unique_id = f"{row[0].strftime('%Y%m%d')}_{row[1]}_{row[2]}_{row[3]}"
+        client_payments.append({
+            'unique_id': unique_id,
+            'payment_date': row[0].strftime('%Y-%m-%d') if row[0] else '',
+            'client_name': row[1],
+            'project_name': row[2],
+            'amount': row[3],
+            'mode_of_payment': row[4],
+            'cheque_no': row[5] if row[5] != "NULL" else "-",
+            'transaction_id': row[6] if row[6] != "NULL" else "-"
+        })
+    
+    cur.close()
+    conn.close()
+    
+    return render_template('admin/delete_entries.html', 
+                          supplier_bills=supplier_bills,
+                          contractor_bills=contractor_bills,
+                          client_payments=client_payments)
+
+@admin.route('/admin/delete/supplier-bill', methods=['POST'])
+@admin_required
+def delete_supplier_bill():
+    if request.method == 'POST':
+        supplier_name = request.form['supplier_name']
+        client_name = request.form['client_name']
+        project_name = request.form['project_name']
+        bill_date = request.form['bill_date']
+        bill_amount = request.form.get('bill_amount', None)
+        gst_amount = request.form.get('gst_amount', None)
+        total_amount = request.form.get('total_amount', None)
+        try:
+            conn, cur = db_connection()
+            delete_query = """
+                DELETE FROM supplier_bill_details 
+                WHERE cont_name = %s 
+                AND clientname = %s 
+                AND p_name = %s 
+                AND bill_date = %s
+            """
+            params = [supplier_name, client_name, project_name, bill_date]
+            if bill_amount and bill_amount.strip():
+                delete_query += " AND bill_amount = %s"
+                params.append(float(bill_amount))
+            if gst_amount and gst_amount.strip():
+                delete_query += " AND gst_amount = %s"
+                params.append(float(gst_amount))
+            if total_amount and total_amount.strip():
+                delete_query += " AND total_amount = %s"
+                params.append(float(total_amount))
+            cur.execute(delete_query, params)
+            if cur.rowcount > 0:
+                conn.commit()
+                flash("Supplier bill deleted successfully!")
+            else:
+                conn.rollback()
+                flash("Supplier bill not found.", "error")
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error deleting supplier bill: {str(e)}", "error")
+        finally:
+            cur.close()
+            conn.close()
+        return redirect(url_for('admin.delete_entries'))
+
+@admin.route('/admin/delete/contractor-bill', methods=['POST'])
+@admin_required
+def delete_contractor_bill():
+    if request.method == 'POST':
+        contractor_name = request.form['contractor_name']
+        client_name = request.form['client_name']
+        project_name = request.form['project_name']
+        bill_date = request.form['bill_date']
+        bill_amount = request.form.get('bill_amount', None)
+        gst_amount = request.form.get('gst_amount', None)
+        total_amount = request.form.get('total_amount', None)
+        
+        try:
+            conn, cur = db_connection()
+            # Build the delete query with more precise conditions
+            delete_query = """
+                DELETE FROM contractor_bill_details 
+                WHERE cont_name = %s 
+                AND clientname = %s 
+                AND p_name = %s 
+                AND bill_date = %s
+            """
+            params = [contractor_name, client_name, project_name, bill_date]
+            
+            # Add additional conditions if they are provided
+            if bill_amount and bill_amount.strip():
+                delete_query += " AND bill_amount = %s"
+                params.append(float(bill_amount))
+            
+            if gst_amount and gst_amount.strip():
+                delete_query += " AND gst_amount = %s"
+                params.append(float(gst_amount))
+                
+            if total_amount and total_amount.strip():
+                delete_query += " AND total_amount = %s"
+                params.append(float(total_amount))
+            
+            cur.execute(delete_query, params)
+            
+            # Check if deletion was successful
+            if cur.rowcount > 0:
+                conn.commit()
+                flash("Contractor bill deleted successfully!")
+            else:
+                conn.rollback()
+                flash("Contractor bill not found.", "error")
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error deleting contractor bill: {str(e)}", "error")
+        finally:
+            cur.close()
+            conn.close()
+        
+        return redirect(url_for('admin.delete_entries'))
+
+@admin.route('/admin/delete/client-payment', methods=['POST'])
+@admin_required
+def delete_client_payment():
+    if request.method == 'POST':
+        try:
+            # Get form data
+            client_name = request.form.get('client_name')
+            project_name = request.form.get('project_name')
+            payment_date = request.form.get('payment_date')
+            amount_str = request.form.get('amount')
+            mode_of_payment = request.form.get('mode_of_payment')
+            
+            # Print received values for debugging
+            print(f"DELETE PAYMENT - Client: {client_name}, Project: {project_name}")
+            print(f"Date: {payment_date}, Amount: {amount_str}, Mode: {mode_of_payment}")
+            
+            # Convert amount to float
+            amount = None
+            if amount_str:
+                try:
+                    # Remove currency symbol and commas
+                    if amount_str.startswith('₹'):
+                        amount_str = amount_str[1:].strip()
+                    amount = float(amount_str.replace(',', ''))
+                    print(f"Converted amount: {amount}")
+                except ValueError:
+                    print(f"Failed to convert amount: {amount_str}")
+            
+            conn, cur = db_connection()
+            
+            # Build query - start with client name and project name
+            query = "DELETE FROM payment_details WHERE clientname = %s AND project_name = %s"
+            params = [client_name, project_name]
+            
+            # Optional: Add date condition if provided
+            if payment_date:
+                try:
+                    # Convert date string to proper format
+                    from datetime import datetime
+                    date_obj = datetime.strptime(payment_date, '%Y-%m-%d')
+                    query += " AND date = %s"
+                    params.append(date_obj.strftime('%Y-%m-%d'))
+                    print(f"Added date condition: {date_obj.strftime('%Y-%m-%d')}")
+                except ValueError:
+                    print(f"Invalid date format: {payment_date}")
+                    # If date format is invalid, don't add it to the query
+            
+            # Optional: Add amount condition if available
+            if amount is not None:
+                query += " AND amount = %s"
+                params.append(amount)
+                print(f"Added amount condition: {amount}")
+            
+            # Optional: Add mode condition if available
+            if mode_of_payment and mode_of_payment != 'null' and mode_of_payment != '-':
+                query += " AND mode_of_payment = %s"
+                params.append(mode_of_payment)
+                print(f"Added mode condition: {mode_of_payment}")
+            
+            # Execute query and commit
+            print(f"Executing query: {query}")
+            print(f"With parameters: {params}")
+            
+            cur.execute(query, params)
+            deleted_count = cur.rowcount
+            
+            if deleted_count > 0:
+                conn.commit()
+                flash(f"Successfully deleted {deleted_count} payment(s)")
+                print(f"Deleted {deleted_count} payment(s)")
+            else:
+                flash("No payments found matching the criteria", "error")
+                print("No matching payments found")
+            
+            cur.close()
+            conn.close()
+            
+        except Exception as e:
+            flash(f"Error deleting payment: {str(e)}", "error")
+            print(f"Exception during deletion: {str(e)}")
+        
+        return redirect(url_for('admin.delete_entries'))
+
+@admin.route('/admin/edit-client/<client_name>', methods=['GET', 'POST'])
+@admin_required
+def edit_client(client_name):
+    conn, cur = db_connection()
+    
+    if request.method == 'POST':
+        try:
+            # Get all form data except primary key
+            new_address = f"{request.form['address']}, {request.form['city']}, {request.form['state']} - {request.form['pincode']}"
+            new_email = request.form['email']
+            new_phone = request.form['phone']
+            
+            # Update the client details (only non-key fields)
+            update_query = '''
+                UPDATE client_details 
+                SET c_address = %s, c_email = %s, c_phone = %s
+                WHERE c_name = %s
+            '''
+            cur.execute(update_query, (new_address, new_email, new_phone, client_name))
+            conn.commit()
+            flash("Client details updated successfully!")
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error updating client: {str(e)}", "error")
+        finally:
+            cur.close()
+            conn.close()
+        return redirect(url_for('admin.admin_dashboard'))
+    
+    # GET request - display the form with current values
+    try:
+        query = '''SELECT c_address, c_email, c_phone FROM client_details WHERE c_name = %s'''
+        cur.execute(query, (client_name,))
+        client_data = cur.fetchone()
+        
+        if not client_data:
+            flash("Client not found", "error")
+            return redirect(url_for('admin.admin_dashboard'))
+        
+        # Parse address components (assuming format: "address, city, state - pincode")
+        address_parts = client_data[0].split(',')
+        address = address_parts[0].strip()
+        
+        city_state_parts = address_parts[1].strip() if len(address_parts) > 1 else ''
+        city = city_state_parts
+        
+        state_pincode = address_parts[2].strip() if len(address_parts) > 2 else ''
+        state_pincode_parts = state_pincode.split('-')
+        state = state_pincode_parts[0].strip()
+        pincode = state_pincode_parts[1].strip() if len(state_pincode_parts) > 1 else ''
+        
+        client = {
+            'name': client_name,
+            'address': address,
+            'city': city,
+            'state': state,
+            'pincode': pincode,
+            'email': client_data[1],
+            'phone': client_data[2]
+        }
+        
+    except Exception as e:
+        flash(f"Error retrieving client data: {str(e)}", "error")
+        return redirect(url_for('admin.admin_dashboard'))
+    finally:
+        cur.close()
+        conn.close()
+    
+    return render_template('admin/edit_client_form.html', client=client)
+
+@admin.route('/admin/edit-supplier/<supplier_name>', methods=['GET', 'POST'])
+@admin_required
+def edit_supplier(supplier_name):
+    conn, cur = db_connection()
+    
+    if request.method == 'POST':
+        try:
+            # Get all form data except primary key
+            new_address = f"{request.form['address']}, {request.form['city']}, {request.form['state']} - {request.form['pincode']}"
+            new_email = request.form['email']
+            new_phone = request.form['phone']
+            new_gstin = request.form['gstin']
+            
+            # Update the supplier details (only non-key fields)
+            update_query = '''
+                UPDATE suppliers_details
+                SET saddress = %s, email = %s, phone_no = %s, gstin = %s
+                WHERE cont_name = %s
+            '''
+            cur.execute(update_query, (new_address, new_email, new_phone, new_gstin, supplier_name))
+            conn.commit()
+            flash("Supplier details updated successfully!")
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error updating supplier: {str(e)}", "error")
+        finally:
+            cur.close()
+            conn.close()
+        return redirect(url_for('admin.admin_dashboard'))
+    
+    # GET request - display the form with current values
+    try:
+        query = '''SELECT saddress, email, phone_no, gstin FROM suppliers_details WHERE cont_name = %s'''
+        cur.execute(query, (supplier_name,))
+        supplier_data = cur.fetchone()
+        
+        if not supplier_data:
+            flash("Supplier not found", "error")
+            return redirect(url_for('admin.admin_dashboard'))
+        
+        # Parse address components (assuming format: "address, city, state - pincode")
+        address_parts = supplier_data[0].split(',')
+        address = address_parts[0].strip()
+        
+        city_state_parts = address_parts[1].strip() if len(address_parts) > 1 else ''
+        city = city_state_parts
+        
+        state_pincode = address_parts[2].strip() if len(address_parts) > 2 else ''
+        state_pincode_parts = state_pincode.split('-')
+        state = state_pincode_parts[0].strip()
+        pincode = state_pincode_parts[1].strip() if len(state_pincode_parts) > 1 else ''
+        
+        supplier = {
+            'name': supplier_name,
+            'address': address,
+            'city': city,
+            'state': state,
+            'pincode': pincode,
+            'email': supplier_data[1],
+            'phone': supplier_data[2],
+            'gstin': supplier_data[3]
+        }
+        
+    except Exception as e:
+        flash(f"Error retrieving supplier data: {str(e)}", "error")
+        return redirect(url_for('admin.admin_dashboard'))
+    finally:
+        cur.close()
+        conn.close()
+    
+    return render_template('admin/edit_supplier_form.html', supplier=supplier)
+
+@admin.route('/admin/edit-contractor/<contractor_name>', methods=['GET', 'POST'])
+@admin_required
+def edit_contractor(contractor_name):
+    conn, cur = db_connection()
+    
+    if request.method == 'POST':
+        try:
+            # Get all form data except primary key
+            new_address = f"{request.form['address']}, {request.form['city']}, {request.form['state']} - {request.form['pincode']}"
+            new_email = request.form['email']
+            new_phone = request.form['phone']
+            new_gstin = request.form['gstin']
+            
+            # Update the contractor details (only non-key fields)
+            update_query = '''
+                UPDATE contractors_details
+                SET caddress = %s, email = %s, phone_no = %s, gstin = %s
+                WHERE cont_name = %s
+            '''
+            cur.execute(update_query, (new_address, new_email, new_phone, new_gstin, contractor_name))
+            conn.commit()
+            flash("Contractor details updated successfully!")
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error updating contractor: {str(e)}", "error")
+        finally:
+            cur.close()
+            conn.close()
+        return redirect(url_for('admin.admin_dashboard'))
+    
+    # GET request - display the form with current values
+    try:
+        query = '''SELECT caddress, email, phone_no, gstin FROM contractors_details WHERE cont_name = %s'''
+        cur.execute(query, (contractor_name,))
+        contractor_data = cur.fetchone()
+        
+        if not contractor_data:
+            flash("Contractor not found", "error")
+            return redirect(url_for('admin.admin_dashboard'))
+        
+        # Parse address components (assuming format: "address, city, state - pincode")
+        address_parts = contractor_data[0].split(',')
+        address = address_parts[0].strip()
+        
+        city_state_parts = address_parts[1].strip() if len(address_parts) > 1 else ''
+        city = city_state_parts
+        
+        state_pincode = address_parts[2].strip() if len(address_parts) > 2 else ''
+        state_pincode_parts = state_pincode.split('-')
+        state = state_pincode_parts[0].strip()
+        pincode = state_pincode_parts[1].strip() if len(state_pincode_parts) > 1 else ''
+        
+        contractor = {
+            'name': contractor_name,
+            'address': address,
+            'city': city,
+            'state': state,
+            'pincode': pincode,
+            'email': contractor_data[1],
+            'phone': contractor_data[2],
+            'gstin': contractor_data[3]
+        }
+        
+    except Exception as e:
+        flash(f"Error retrieving contractor data: {str(e)}", "error")
+        return redirect(url_for('admin.admin_dashboard'))
+    finally:
+        cur.close()
+        conn.close()
+    
+    return render_template('admin/edit_contractor_form.html', contractor=contractor)
+
+@admin.route('/admin/edit-project/<client_name>/<project_name>', methods=['GET', 'POST'])
+@admin_required
+def edit_project(client_name, project_name):
+    conn, cur = db_connection()
+    
+    if request.method == 'POST':
+        try:
+            # Get all form data except primary keys (p_name and c_name)
+            location = f"{request.form['p_address']}, {request.form['p_city']}, {request.form['p_state']} - {request.form['p_pincode']}"
+            start_date = request.form['start_date']
+            end_date = request.form['completion_date']
+            design_concept = request.form['work_type']
+            project_type = request.form['project_type']
+            services = ','.join(request.form.getlist('services[]'))
+            design_fee = int(request.form.get('design_fee', 0))
+            labour_fee = int(request.form.get('labour_fee', 0))
+            material_cost = int(request.form.get('material_cost', 0))
+            total_budget = int(request.form.get('total_budget', 0))
+            description = request.form['description']
+            
+            # Update the project details (only non-key fields)
+            update_query = '''
+                UPDATE project_details
+                SET p_location = %s, start_date = %s, end_date = %s, 
+                    design_concept = %s, project_type = %s, services = %s,
+                    design_fee = %s, labour_fee = %s, material_cost = %s,
+                    total_budget = %s, desc_of_work = %s
+                WHERE p_name = %s AND c_name = %s
+            '''
+            cur.execute(update_query, (
+                location, start_date, end_date, design_concept, project_type, 
+                services, design_fee, labour_fee, material_cost, total_budget, 
+                description, project_name, client_name
+            ))
+            conn.commit()
+            flash("Project details updated successfully!")
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error updating project: {str(e)}", "error")
+        finally:
+            cur.close()
+            conn.close()
+        return redirect(url_for('admin.admin_dashboard'))
+    
+    # GET request - display the form with current values
+    try:
+        query = '''
+            SELECT p_location, start_date, end_date, design_concept, desc_of_work, 
+                   project_type, services, design_fee, labour_fee, material_cost, total_budget
+            FROM project_details 
+            WHERE p_name = %s AND c_name = %s
+        '''
+        cur.execute(query, (project_name, client_name))
+        project_data = cur.fetchone()
+        
+        if not project_data:
+            flash("Project not found", "error")
+            return redirect(url_for('admin.admin_dashboard'))
+        
+        # Parse location components (assuming format: "address, city, state - pincode")
+        location_parts = project_data[0].split(',')
+        p_address = location_parts[0].strip()
+        
+        city_state_parts = location_parts[1].strip() if len(location_parts) > 1 else ''
+        p_city = city_state_parts
+        
+        state_pincode = location_parts[2].strip() if len(location_parts) > 2 else ''
+        state_pincode_parts = state_pincode.split('-')
+        p_state = state_pincode_parts[0].strip()
+        p_pincode = state_pincode_parts[1].strip() if len(state_pincode_parts) > 1 else ''
+        
+        project = {
+            'client_name': client_name,
+            'name': project_name,
+            'p_address': p_address,
+            'p_city': p_city,
+            'p_state': p_state,
+            'p_pincode': p_pincode,
+            'start_date': project_data[1].strftime('%Y-%m-%d') if project_data[1] else '',
+            'completion_date': project_data[2].strftime('%Y-%m-%d') if project_data[2] else '',
+            'work_type': project_data[3],
+            'description': project_data[4],
+            'project_type': project_data[5],
+            'services': project_data[6].split(',') if project_data[6] else [],
+            'design_fee': project_data[7],
+            'labour_fee': project_data[8],
+            'material_cost': project_data[9],
+            'total_budget': project_data[10]
+        }
+        
+    except Exception as e:
+        flash(f"Error retrieving project data: {str(e)}", "error")
+        return redirect(url_for('admin.admin_dashboard'))
+    finally:
+        cur.close()
+        conn.close()
+    
+    return render_template('admin/edit_project_form.html', project=project)
+
+@admin.route('/admin/suppliers', methods=['GET'])
+@admin_required
+def all_suppliers():
+    conn, cur = db_connection()
+    try:
+        query = '''SELECT cont_name, saddress, email, phone_no, gstin FROM suppliers_details ORDER BY cont_name'''
+        cur.execute(query)
+        suppliers = [dict(
+            name=row[0],
+            address=row[1],
+            email=row[2],
+            phone=row[3],
+            gstin=row[4]
+        ) for row in cur.fetchall()]
+    except Exception as e:
+        flash(f"Error retrieving suppliers: {str(e)}", "error")
+        suppliers = []
+    finally:
+        cur.close()
+        conn.close()
+    
+    return render_template('admin/suppliers_list.html', suppliers=suppliers)
+
+@admin.route('/admin/contractors', methods=['GET'])
+@admin_required
+def all_contractors():
+    conn, cur = db_connection()
+    try:
+        query = '''SELECT cont_name, caddress, email, phone_no, gstin FROM contractors_details ORDER BY cont_name'''
+        cur.execute(query)
+        contractors = [dict(
+            name=row[0],
+            address=row[1],
+            email=row[2],
+            phone=row[3],
+            gstin=row[4]
+        ) for row in cur.fetchall()]
+    except Exception as e:
+        flash(f"Error retrieving contractors: {str(e)}", "error")
+        contractors = []
+    finally:
+        cur.close()
+        conn.close()
+    
+    return render_template('admin/contractors_list.html', contractors=contractors)
+
 @admin.errorhandler(CSRFError)
 def handle_csrf_error(e):
     return render_template('error.html', message="CSRF token is missing or invalid. Please try again."), 400

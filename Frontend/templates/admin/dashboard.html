@@ -27,6 +27,7 @@
                 </div>
                 <div class="client-card-footer">
                     <a href="projects/{{client['c_name']}}"><button class="client-btn view">View Projects</button></a>
+                    <a href="{{ url_for('admin.edit_client', client_name=client['c_name']) }}"><button class="client-btn edit">Edit</button></a>
                 </div>
             </div>
             {% endfor %}

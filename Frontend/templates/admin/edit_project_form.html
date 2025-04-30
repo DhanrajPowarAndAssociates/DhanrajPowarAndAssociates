@@ -1,0 +1,190 @@
+{% extends 'layouts/index.html' %}
+
+{% block style %}
+<link rel="stylesheet" href="{{ url_for('static', filename='style/form.css') }}">
+<style>
+    .services-container {
+        margin-bottom: 20px;
+    }
+    
+    .service-checkbox {
+        display: inline-block;
+        margin-right: 15px;
+        margin-bottom: 10px;
+    }
+    
+    .project-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    
+    .project-info {
+        font-size: 16px;
+        color: #666;
+    }
+    
+    .project-info span {
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .budget-container {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <div class="title">Edit Project Details</div>
+    
+    <div class="project-header">
+        <div class="project-info">
+            Project: <span>{{ project.name }}</span>
+        </div>
+        <div class="project-info">
+            Client: <span>{{ project.client_name }}</span>
+        </div>
+    </div>
+    
+    <form action="{{ url_for('admin.edit_project', client_name=project.client_name, project_name=project.name) }}" method="POST">
+        <div class="form-group">
+            <label for="p_address">Project Address</label>
+            <input type="text" id="p_address" name="p_address" value="{{ project.p_address }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="p_city">City</label>
+            <input type="text" id="p_city" name="p_city" value="{{ project.p_city }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="p_state">State</label>
+            <input type="text" id="p_state" name="p_state" value="{{ project.p_state }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="p_pincode">Pincode</label>
+            <input type="text" id="p_pincode" name="p_pincode" value="{{ project.p_pincode }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="start_date">Start Date</label>
+            <input type="date" id="start_date" name="start_date" value="{{ project.start_date }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="completion_date">Completion Date</label>
+            <input type="date" id="completion_date" name="completion_date" value="{{ project.completion_date }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="work_type">Work Type / Design Concept</label>
+            <input type="text" id="work_type" name="work_type" value="{{ project.work_type }}" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="project_type">Project Type</label>
+            <select id="project_type" name="project_type" required>
+                <option value="Residential" {% if project.project_type == 'Residential' %}selected{% endif %}>Residential</option>
+                <option value="Commercial" {% if project.project_type == 'Commercial' %}selected{% endif %}>Commercial</option>
+                <option value="Industrial" {% if project.project_type == 'Industrial' %}selected{% endif %}>Industrial</option>
+                <option value="Institutional" {% if project.project_type == 'Institutional' %}selected{% endif %}>Institutional</option>
+                <option value="Other" {% if project.project_type == 'Other' %}selected{% endif %}>Other</option>
+            </select>
+        </div>
+        
+        <div class="form-group">
+            <label>Services</label>
+            <div class="services-container">
+                <div class="service-checkbox">
+                    <input type="checkbox" id="service_architecture" name="services[]" value="Architecture" {% if 'Architecture' in project.services %}checked{% endif %}>
+                    <label for="service_architecture">Architecture</label>
+                </div>
+                <div class="service-checkbox">
+                    <input type="checkbox" id="service_interior" name="services[]" value="Interior Design" {% if 'Interior Design' in project.services %}checked{% endif %}>
+                    <label for="service_interior">Interior Design</label>
+                </div>
+                <div class="service-checkbox">
+                    <input type="checkbox" id="service_landscape" name="services[]" value="Landscape Design" {% if 'Landscape Design' in project.services %}checked{% endif %}>
+                    <label for="service_landscape">Landscape Design</label>
+                </div>
+                <div class="service-checkbox">
+                    <input type="checkbox" id="service_structural" name="services[]" value="Structural Engineering" {% if 'Structural Engineering' in project.services %}checked{% endif %}>
+                    <label for="service_structural">Structural Engineering</label>
+                </div>
+                <div class="service-checkbox">
+                    <input type="checkbox" id="service_mep" name="services[]" value="MEP" {% if 'MEP' in project.services %}checked{% endif %}>
+                    <label for="service_mep">MEP</label>
+                </div>
+                <div class="service-checkbox">
+                    <input type="checkbox" id="service_project_management" name="services[]" value="Project Management" {% if 'Project Management' in project.services %}checked{% endif %}>
+                    <label for="service_project_management">Project Management</label>
+                </div>
+                <div class="service-checkbox">
+                    <input type="checkbox" id="service_3d_visualization" name="services[]" value="3D Visualization" {% if '3D Visualization' in project.services %}checked{% endif %}>
+                    <label for="service_3d_visualization">3D Visualization</label>
+                </div>
+            </div>
+        </div>
+        
+        <div class="budget-container">
+            <div class="form-group">
+                <label for="design_fee">Design Fee (₹)</label>
+                <input type="number" id="design_fee" name="design_fee" value="{{ project.design_fee }}" min="0" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="labour_fee">Labour Fee (₹)</label>
+                <input type="number" id="labour_fee" name="labour_fee" value="{{ project.labour_fee }}" min="0" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="material_cost">Material Cost (₹)</label>
+                <input type="number" id="material_cost" name="material_cost" value="{{ project.material_cost }}" min="0" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="total_budget">Total Budget (₹)</label>
+                <input type="number" id="total_budget" name="total_budget" value="{{ project.total_budget }}" min="0" required>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <label for="description">Project Description</label>
+            <textarea id="description" name="description" rows="5" required>{{ project.description }}</textarea>
+        </div>
+        
+        <div class="form-actions">
+            <a href="{{ url_for('admin.admin_dashboard') }}" class="cancel-btn" style="background-color: #ff0000; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 500; text-decoration: none; display: inline-block; transition: all 0.3s ease; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center;">Cancel</a>
+            <button type="submit" class="submit-btn" style="background-color: var(--primary); color: white; border: solid 1.5px white; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease;">Update Project</button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Auto-calculate total budget
+    document.addEventListener('DOMContentLoaded', function() {
+        const designFeeInput = document.getElementById('design_fee');
+        const labourFeeInput = document.getElementById('labour_fee');
+        const materialCostInput = document.getElementById('material_cost');
+        const totalBudgetInput = document.getElementById('total_budget');
+        
+        function calculateTotal() {
+            const designFee = parseInt(designFeeInput.value) || 0;
+            const labourFee = parseInt(labourFeeInput.value) || 0;
+            const materialCost = parseInt(materialCostInput.value) || 0;
+            
+            totalBudgetInput.value = designFee + labourFee + materialCost;
+        }
+        
+        designFeeInput.addEventListener('input', calculateTotal);
+        labourFeeInput.addEventListener('input', calculateTotal);
+        materialCostInput.addEventListener('input', calculateTotal);
+    });
+</script>
+{% endblock %} 

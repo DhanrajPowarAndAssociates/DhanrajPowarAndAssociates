@@ -1372,3 +1372,11 @@ input[id="gstin"]:focus {
         min-width: 120px;
     }
 }
+
+#htor{
+    color: red;
+}
+#htor:hover{
+    background-color: rgba(255, 64, 64, 0.264);
+    color: rgb(255, 0, 0);
+}

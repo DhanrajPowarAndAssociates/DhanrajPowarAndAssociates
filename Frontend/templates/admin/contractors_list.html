@@ -1,0 +1,81 @@
+{% extends "layouts/layout.html" %}
+
+{% block content %}
+<div class="container my-4">
+    <h2 class="mb-4">Contractors List</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category if category != 'message' else 'info' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="card shadow">
+        <div class="card-body">
+            {% if contractors %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Name</th>
+                                <th>Address</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>GSTIN</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contractor in contractors %}
+                            <tr>
+                                <td>{{ contractor.name }}</td>
+                                <td>{{ contractor.address }}</td>
+                                <td>{{ contractor.email }}</td>
+                                <td>{{ contractor.phone }}</td>
+                                <td>{{ contractor.gstin }}</td>
+                                <td>
+                                    <a href="{{ url_for('admin.edit_contractor', contractor_name=contractor.name) }}" class="btn btn-sm btn-primary" style="background-color: var(--primary); color: white; border: solid 1.5px white; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; text-decoration: none;" onmouseover="this.style.backgroundColor='#67a3ff'" onmouseout="this.style.backgroundColor='var(--primary)'">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info mb-0">No contractors found.</div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <a href="{{ url_for('admin.new_contractor') }}" class="btn btn-success" style="background-color: var(--primary); color: white; border: solid 1.5px white; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; text-decoration: none;" onmouseover="this.style.backgroundColor='#67a3ff'" onmouseout="this.style.backgroundColor='var(--primary)'">
+            <i class="bi bi-plus-circle"></i> Add New Contractor
+        </a>
+        <a href="{{ url_for('admin.admin_dashboard') }}" class="btn btn-secondary ms-2" style="background-color: var(--primary); color: white; border: solid 1.5px white; padding: 10px 20px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; text-decoration: none;" onmouseover="this.style.backgroundColor='#67a3ff'" onmouseout="this.style.backgroundColor='var(--primary)'">
+            <i class="bi bi-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<style>
+    .table th, .table td {
+        vertical-align: middle;
+    }
+    
+    .card {
+        border-radius: 10px;
+    }
+    
+    .table-responsive {
+        border-radius: 5px;
+        overflow: hidden;
+    }
+</style>
+{% endblock %} 

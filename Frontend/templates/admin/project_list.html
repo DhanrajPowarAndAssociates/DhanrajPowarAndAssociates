@@ -10,8 +10,9 @@
                 <div class="client-card-header">
                     <h3>{{ project.p_name }}</h3>
                     <div class="button-group">
-                        <button type="button" class="print-btn" onmouseenter="this.style.backgroundColor='var(--hover-secondary)'" onmouseleave="this.style.backgroundColor='var(--secondary)'" style="background-color: var(--secondary); color: white; border: solid 1.5px white; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease;"><a href="print/{{uid}}/{{project.p_name}}" style="text-decoration: none; color: aliceblue;">Print</a></button>
-                        <button type="button" class="audit-btn" onclick="openAuditModal('{{uid}}', '{{project.p_name}}')" style="background-color: var(--primary); color: white; border: solid 1.5px white; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease;">Audit</button>
+                        <button type="button" class="print-btn" onclick="window.location.href='print/{{uid}}/{{project.p_name}}'" style="background-color: var(--primary); color: white; border: solid 1.5px white; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#67a3ff'" onmouseout="this.style.backgroundColor='var(--primary)'">Print</button>
+                        <button type="button" class="audit-btn" onclick="openAuditModal('{{uid}}', '{{project.p_name}}')" style="background-color: var(--primary); color: white; border: solid 1.5px white; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#67a3ff'" onmouseout="this.style.backgroundColor='var(--primary)'">Audit</button>
+                        <button type="button" class="edit-btn" onclick="window.location.href='{{ url_for('admin.edit_project', client_name=uid, project_name=project.p_name) }}'" style="background-color: var(--primary); color: white; border: solid 1.5px white; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.3s ease;" onmouseover="this.style.backgroundColor='#67a3ff'" onmouseout="this.style.backgroundColor='var(--primary)'">Edit</button>
                     </div>
                 </div>
                 <div class="client-card-body">
@@ -53,7 +54,10 @@
                 <input type="date" id="to_date" name="to_date" required onchange="validateDateRange()">
                 <div id="to_date_error" class="error-message"></div>
             </div>
-            <button type="submit" class="submit-btn" style="background-color: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.3s ease; width: 100%;">Generate Audit Report</button>
+            <div class="modal-actions">
+                <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="submit-btn" style="background-color: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; font-weight: 500; cursor: pointer; transition: all 0.3s ease;">Generate Audit Report</button>
+            </div>
         </form>
     </div>
 </div>
@@ -124,12 +128,49 @@
     padding: 10px 20px;
     border-radius: 4px;
     cursor: pointer;
-    width: 100%;
     font-size: 16px;
 }
 
 .submit-btn:hover {
     background-color: var(--secondary);
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.cancel-btn {
+    background-color: #ff0000;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    min-width: 120px;
+    text-align: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.cancel-btn:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.cancel-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
 }
 
 .error-message {
@@ -211,13 +252,17 @@ function openAuditModal(uid, pname) {
     document.getElementById('to_date').classList.remove('error');
 }
 
-document.querySelector('.close').onclick = function() {
+function closeModal() {
     document.getElementById('auditModal').style.display = 'none';
+}
+
+document.querySelector('.close').onclick = function() {
+    closeModal();
 }
 
 window.onclick = function(event) {
     if (event.target == document.getElementById('auditModal')) {
-        document.getElementById('auditModal').style.display = 'none';
+        closeModal();
     }
 }
 

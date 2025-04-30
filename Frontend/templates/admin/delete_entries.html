@@ -1,0 +1,456 @@
+{% extends 'layouts/index.html' %}
+
+{% block style %}
+<style>
+    .container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .title {
+        text-align: center;
+        font-size: 24px;
+        margin-bottom: 20px;
+        color: #333;
+    }
+
+    .tabs {
+        display: flex;
+        margin-bottom: 20px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .tab {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: 1px solid transparent;
+        border-bottom: none;
+        border-radius: 5px 5px 0 0;
+        margin-right: 5px;
+        background-color: #f0f0f0;
+        transition: all 0.3s;
+    }
+
+    .tab.active {
+        background-color: #fff;
+        border-color: #ddd;
+        border-bottom-color: #fff;
+        margin-bottom: -1px;
+        font-weight: bold;
+    }
+
+    .tab-content {
+        display: none;
+        padding: 20px;
+        background-color: #fff;
+        border-radius: 0 0 5px 5px;
+        border: 1px solid #ddd;
+        border-top: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+
+    th, td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #ddd;
+    }
+
+    th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+
+    tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .delete-btn {
+        padding: 6px 12px;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .delete-btn:hover {
+        background-color: #c82333;
+    }
+
+    .empty-message {
+        text-align: center;
+        color: #888;
+        padding: 20px;
+        font-style: italic;
+    }
+
+    .flash-messages {
+        margin-bottom: 20px;
+    }
+
+    .flash-message {
+        padding: 10px 15px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+    }
+
+    .flash-message.error {
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+        color: #721c24;
+    }
+
+    .confirmation-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 100;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .modal-content {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        width: 400px;
+        max-width: 90%;
+        text-align: center;
+    }
+
+    .modal-buttons {
+        display: flex;
+        justify-content: center;
+        margin-top: 20px;
+    }
+
+    .modal-buttons button {
+        padding: 8px 15px;
+        margin: 0 10px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .confirm-delete {
+        background-color: #dc3545;
+        color: white;
+    }
+
+    .cancel-delete {
+        background-color: #6c757d;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="title">Delete Entries</div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message {% if category == 'error' %}error{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="tabs">
+        <div class="tab active" data-tab="supplier">Supplier Bills</div>
+        <div class="tab" data-tab="contractor">Contractor Bills</div>
+        <div class="tab" data-tab="payment">Client Payments</div>
+    </div>
+
+    <div class="tab-content active" id="supplier-tab">
+        <div class="table-responsive">
+            {% if supplier_bills %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Supplier Name</th>
+                            <th>Client Name</th>
+                            <th>Project Name</th>
+                            <th>Bill Date</th>
+                            <th>Bill Amount</th>
+                            <th>GST Amount</th>
+                            <th>Total Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in supplier_bills %}
+                            <tr>
+                                <td>{{ bill.supplier_name }}</td>
+                                <td>{{ bill.client_name }}</td>
+                                <td>{{ bill.project_name }}</td>
+                                <td>{{ bill.bill_date }}</td>
+                                <td>₹{{ bill.bill_amount }}</td>
+                                <td>₹{{ bill.gst_amount }}</td>
+                                <td>₹{{ bill.total_amount }}</td>
+                                <td>
+                                    <button class="delete-btn" 
+                                            onclick="confirmDelete('supplier', '{{ bill.supplier_name }}', '{{ bill.client_name }}', '{{ bill.project_name }}', '{{ bill.bill_date }}', '{{ bill.bill_amount }}', '{{ bill.gst_amount }}', '{{ bill.total_amount }}')">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-message">No supplier bills found.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="tab-content" id="contractor-tab">
+        <div class="table-responsive">
+            {% if contractor_bills %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Contractor Name</th>
+                            <th>Client Name</th>
+                            <th>Project Name</th>
+                            <th>Bill Date</th>
+                            <th>Bill Amount</th>
+                            <th>GST Amount</th>
+                            <th>Total Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for bill in contractor_bills %}
+                            <tr>
+                                <td>{{ bill.contractor_name }}</td>
+                                <td>{{ bill.client_name }}</td>
+                                <td>{{ bill.project_name }}</td>
+                                <td>{{ bill.bill_date }}</td>
+                                <td>₹{{ bill.bill_amount }}</td>
+                                <td>₹{{ bill.gst_amount }}</td>
+                                <td>₹{{ bill.total_amount }}</td>
+                                <td>
+                                    <button class="delete-btn" 
+                                            onclick="confirmDelete('contractor', '{{ bill.contractor_name }}', '{{ bill.client_name }}', '{{ bill.project_name }}', '{{ bill.bill_date }}', '{{ bill.bill_amount }}', '{{ bill.gst_amount }}', '{{ bill.total_amount }}')">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-message">No contractor bills found.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="tab-content" id="payment-tab">
+        <div class="table-responsive">
+            {% if client_payments %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Client Name</th>
+                            <th>Project Name</th>
+                            <th>Payment Date</th>
+                            <th>Amount</th>
+                            <th>Payment Mode</th>
+                            <th>Cheque/Transaction</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in client_payments %}
+                            <tr>
+                                <td>{{ payment.client_name }}</td>
+                                <td>{{ payment.project_name }}</td>
+                                <td>{{ payment.payment_date }}</td>
+                                <td>₹{{ payment.amount }}</td>
+                                <td>{{ payment.mode_of_payment }}</td>
+                                <td>
+                                    {% if payment.mode_of_payment == 'cheque' %}
+                                        {{ payment.cheque_no }}
+                                    {% elif payment.mode_of_payment in ['upi', 'netbanking'] %}
+                                        {{ payment.transaction_id }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <button class="delete-btn" 
+                                            onclick="confirmDelete('payment', '{{ payment.client_name }}', '{{ payment.project_name }}', '', '{{ payment.payment_date }}', '{{ payment.amount }}', '', '', '{{ payment.mode_of_payment }}', '{{ payment.cheque_no }}', '{{ payment.transaction_id }}')">
+                                        Delete
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="empty-message">No client payments found.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="confirmation-modal" id="confirmationModal">
+    <div class="modal-content">
+        <h3>Confirm Deletion</h3>
+        <p id="confirmationMessage"></p>
+        <div class="modal-buttons">
+            <button class="cancel-delete" onclick="closeModal()">Cancel</button>
+            <button class="confirm-delete" id="confirmDeleteBtn">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Forms -->
+<form id="deleteSupplierForm" method="POST" action="/admin/delete/supplier-bill">
+    <input type="hidden" id="supplier_name" name="supplier_name">
+    <input type="hidden" id="supplier_client_name" name="client_name">
+    <input type="hidden" id="supplier_project_name" name="project_name">
+    <input type="hidden" id="supplier_bill_date" name="bill_date">
+    <input type="hidden" id="supplier_bill_amount" name="bill_amount">
+    <input type="hidden" id="supplier_gst_amount" name="gst_amount">
+    <input type="hidden" id="supplier_total_amount" name="total_amount">
+</form>
+
+<form id="deleteContractorForm" method="POST" action="/admin/delete/contractor-bill">
+    <input type="hidden" id="contractor_name" name="contractor_name">
+    <input type="hidden" id="contractor_client_name" name="client_name">
+    <input type="hidden" id="contractor_project_name" name="project_name">
+    <input type="hidden" id="contractor_bill_date" name="bill_date">
+    <input type="hidden" id="contractor_bill_amount" name="bill_amount">
+    <input type="hidden" id="contractor_gst_amount" name="gst_amount">
+    <input type="hidden" id="contractor_total_amount" name="total_amount">
+</form>
+
+<form id="deletePaymentForm" method="POST" action="/admin/delete/client-payment">
+    <input type="hidden" id="payment_client_name" name="client_name">
+    <input type="hidden" id="payment_project_name" name="project_name">
+    <input type="hidden" id="payment_date" name="payment_date">
+    <input type="hidden" id="payment_amount" name="amount">
+    <input type="hidden" id="payment_mode" name="mode_of_payment">
+    <input type="hidden" id="payment_cheque_no" name="cheque_no">
+    <input type="hidden" id="payment_transaction_id" name="transaction_id">
+</form>
+
+<script>
+    // Tab functionality
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs and content
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            tab.classList.add('active');
+            
+            // Show corresponding content
+            const tabName = tab.getAttribute('data-tab');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+        });
+    });
+
+    // Delete confirmation
+    function confirmDelete(type, name, clientName, projectName, date, amount, gstAmount, totalAmount, mode, chequeNo, transactionId) {
+        const modal = document.getElementById('confirmationModal');
+        const message = document.getElementById('confirmationMessage');
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        
+        let messageText = '';
+        
+        if (type === 'supplier') {
+            messageText = `Are you sure you want to delete the bill from supplier "${name}" for project "${projectName}" dated ${date}?`;
+        } else if (type === 'contractor') {
+            messageText = `Are you sure you want to delete the bill from contractor "${name}" for project "${projectName}" dated ${date}?`;
+        } else if (type === 'payment') {
+            messageText = `Are you sure you want to delete the payment from client "${name}" for project "${clientName}" dated ${date}?`;
+        }
+        
+        message.textContent = messageText;
+        
+        // Set up confirm button action
+        confirmBtn.onclick = () => {
+            if (type === 'supplier') {
+                document.getElementById('supplier_name').value = name;
+                document.getElementById('supplier_client_name').value = clientName;
+                document.getElementById('supplier_project_name').value = projectName;
+                document.getElementById('supplier_bill_date').value = date;
+                if (amount) document.getElementById('supplier_bill_amount').value = amount;
+                if (gstAmount) document.getElementById('supplier_gst_amount').value = gstAmount;
+                if (totalAmount) document.getElementById('supplier_total_amount').value = totalAmount;
+                document.getElementById('deleteSupplierForm').submit();
+            } else if (type === 'contractor') {
+                document.getElementById('contractor_name').value = name;
+                document.getElementById('contractor_client_name').value = clientName;
+                document.getElementById('contractor_project_name').value = projectName;
+                document.getElementById('contractor_bill_date').value = date;
+                if (amount) document.getElementById('contractor_bill_amount').value = amount;
+                if (gstAmount) document.getElementById('contractor_gst_amount').value = gstAmount;
+                if (totalAmount) document.getElementById('contractor_total_amount').value = totalAmount;
+                document.getElementById('deleteContractorForm').submit();
+            } else if (type === 'payment') {
+                document.getElementById('payment_client_name').value = name;
+                document.getElementById('payment_project_name').value = clientName;
+                document.getElementById('payment_date').value = date;
+                document.getElementById('payment_amount').value = amount;
+                if (mode) document.getElementById('payment_mode').value = mode;
+                if (chequeNo) document.getElementById('payment_cheque_no').value = chequeNo;
+                if (transactionId) document.getElementById('payment_transaction_id').value = transactionId;
+                document.getElementById('deletePaymentForm').submit();
+            }
+            
+            // Close modal after submitting
+            closeModal();
+        };
+        
+        // Show modal
+        modal.style.display = 'flex';
+    }
+    
+    function closeModal() {
+        document.getElementById('confirmationModal').style.display = 'none';
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const modal = document.getElementById('confirmationModal');
+        if (event.target === modal) {
+            closeModal();
+        }
+    };
+</script>
+{% endblock %}
