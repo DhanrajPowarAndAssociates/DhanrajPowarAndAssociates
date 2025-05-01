@@ -40,7 +40,7 @@
         border-color: #ddd;
         border-bottom-color: #fff;
         margin-bottom: -1px;
-        font-weight: bold;
+        text-decoration: underline;
     }
 
     .tab-content {
@@ -81,18 +81,40 @@
         background-color: #f5f5f5;
     }
 
-    .delete-btn {
+    .delete-btn, .edit-btn {
         padding: 6px 12px;
-        background-color: #dc3545;
         color: white;
         border: none;
         border-radius: 4px;
         cursor: pointer;
         transition: background-color 0.3s;
+        margin-right: 5px;
+        height: 32px;
+        line-height: 20px;
+    }
+
+    .delete-btn {
+        background-color: #dc3545;
     }
 
     .delete-btn:hover {
         background-color: #c82333;
+    }
+
+    .edit-btn {
+        background-color: #007bff;
+    }
+
+    .edit-btn:hover {
+        background-color: #0069d9;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        justify-content: center;
+        padding-top: 15%;
     }
 
     .empty-message {
@@ -121,7 +143,7 @@
         color: #721c24;
     }
 
-    .confirmation-modal {
+    .confirmation-modal, .edit-modal {
         display: none;
         position: fixed;
         top: 0;
@@ -143,15 +165,74 @@
         text-align: center;
     }
 
+    .edit-modal .modal-content {
+        width: 500px;
+        text-align: left;
+    }
+
+    .edit-form-group {
+        margin-bottom: 15px;
+    }
+
+    .edit-form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+    }
+
+    .edit-form-group input, .edit-form-group select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .edit-form-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 15px;
+    }
+
+    .edit-form-row .edit-form-group {
+        flex: 1;
+        margin-bottom: 0;
+    }
+
+    .gst-components {
+        display: flex;
+        gap: 15px;
+        margin-top: 5px;
+    }
+
+    .gst-components .component {
+        flex: 1;
+        background-color: #f8f9fa;
+        padding: 8px;
+        border-radius: 4px;
+        text-align: center;
+        font-size: 0.9em;
+    }
+
+    .gst-components .component span {
+        font-weight: bold;
+    }
+    
+    .note {
+        font-size: 12px;
+        color: #6c757d;
+        margin-top: 5px;
+        font-style: italic;
+    }
+
     .modal-buttons {
         display: flex;
         justify-content: center;
         margin-top: 20px;
+        gap: 10px;
     }
 
     .modal-buttons button {
         padding: 8px 15px;
-        margin: 0 10px;
         border: none;
         border-radius: 4px;
         cursor: pointer;
@@ -162,9 +243,78 @@
         color: white;
     }
 
-    .cancel-delete {
+    .cancel-action {
         background-color: #6c757d;
         color: white;
+    }
+
+    .confirm-edit {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .filters {
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #fff;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .filter-row {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+
+    .filter-group {
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .filter-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .filter-group select {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .filter-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .filter-btn {
+        padding: 8px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .apply-filter {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .reset-filter {
+        background-color: #6c757d;
+        color: white;
+    }
+
+    .filter-btn:hover {
+        opacity: 0.9;
     }
 </style>
 {% endblock %}
@@ -184,6 +334,32 @@
             </div>
         {% endif %}
     {% endwith %}
+
+    <div class="filters">
+        <form id="filterForm" method="GET" action="{{ url_for('admin.delete_entries') }}">
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label for="client_name">Client Name</label>
+                    <select name="client_name" id="client_name">
+                        <option value="">All Clients</option>
+                        {% for client in clients %}
+                            <option value="{{ client }}" {% if client == selected_client %}selected{% endif %}>{{ client }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label for="project_name">Project Name</label>
+                    <select name="project_name" id="project_name">
+                        <option value="">Select a client first</option>
+                    </select>
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="button" class="filter-btn reset-filter" onclick="resetFilters()">Reset</button>
+                <button type="submit" class="filter-btn apply-filter">Apply Filters</button>
+            </div>
+        </form>
+    </div>
 
     <div class="tabs">
         <div class="tab active" data-tab="supplier">Supplier Bills</div>
@@ -217,7 +393,11 @@
                                 <td>₹{{ bill.bill_amount }}</td>
                                 <td>₹{{ bill.gst_amount }}</td>
                                 <td>₹{{ bill.total_amount }}</td>
-                                <td>
+                                <td class="action-buttons">
+                                    <button class="edit-btn" 
+                                            onclick="openEditModal('supplier', '{{ bill.supplier_name }}', '{{ bill.client_name }}', '{{ bill.project_name }}', '{{ bill.bill_date }}', '{{ bill.bill_amount }}', '{{ bill.gst_amount }}', '{{ bill.total_amount }}')">
+                                        Edit
+                                    </button>
                                     <button class="delete-btn" 
                                             onclick="confirmDelete('supplier', '{{ bill.supplier_name }}', '{{ bill.client_name }}', '{{ bill.project_name }}', '{{ bill.bill_date }}', '{{ bill.bill_amount }}', '{{ bill.gst_amount }}', '{{ bill.total_amount }}')">
                                         Delete
@@ -228,7 +408,13 @@
                     </tbody>
                 </table>
             {% else %}
-                <div class="empty-message">No supplier bills found.</div>
+                <div class="empty-message">
+                    {% if selected_client or selected_project %}
+                        No supplier bills found for the selected filters.
+                    {% else %}
+                        Please select a client or project to view supplier bills.
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
     </div>
@@ -259,7 +445,11 @@
                                 <td>₹{{ bill.bill_amount }}</td>
                                 <td>₹{{ bill.gst_amount }}</td>
                                 <td>₹{{ bill.total_amount }}</td>
-                                <td>
+                                <td class="action-buttons">
+                                    <button class="edit-btn" 
+                                            onclick="openEditModal('contractor', '{{ bill.contractor_name }}', '{{ bill.client_name }}', '{{ bill.project_name }}', '{{ bill.bill_date }}', '{{ bill.bill_amount }}', '{{ bill.gst_amount }}', '{{ bill.total_amount }}')">
+                                        Edit
+                                    </button>
                                     <button class="delete-btn" 
                                             onclick="confirmDelete('contractor', '{{ bill.contractor_name }}', '{{ bill.client_name }}', '{{ bill.project_name }}', '{{ bill.bill_date }}', '{{ bill.bill_amount }}', '{{ bill.gst_amount }}', '{{ bill.total_amount }}')">
                                         Delete
@@ -270,7 +460,13 @@
                     </tbody>
                 </table>
             {% else %}
-                <div class="empty-message">No contractor bills found.</div>
+                <div class="empty-message">
+                    {% if selected_client or selected_project %}
+                        No contractor bills found for the selected filters.
+                    {% else %}
+                        Please select a client or project to view contractor bills.
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
     </div>
@@ -307,7 +503,11 @@
                                         -
                                     {% endif %}
                                 </td>
-                                <td>
+                                <td class="action-buttons">
+                                    <button class="edit-btn" 
+                                            onclick="openEditModal('payment', '{{ payment.client_name }}', '{{ payment.project_name }}', '', '{{ payment.payment_date }}', '{{ payment.amount }}', '', '', '{{ payment.mode_of_payment }}', '{{ payment.cheque_no }}', '{{ payment.transaction_id }}')">
+                                        Edit
+                                    </button>
                                     <button class="delete-btn" 
                                             onclick="confirmDelete('payment', '{{ payment.client_name }}', '{{ payment.project_name }}', '', '{{ payment.payment_date }}', '{{ payment.amount }}', '', '', '{{ payment.mode_of_payment }}', '{{ payment.cheque_no }}', '{{ payment.transaction_id }}')">
                                         Delete
@@ -318,7 +518,13 @@
                     </tbody>
                 </table>
             {% else %}
-                <div class="empty-message">No client payments found.</div>
+                <div class="empty-message">
+                    {% if selected_client or selected_project %}
+                        No client payments found for the selected filters.
+                    {% else %}
+                        Please select a client or project to view client payments.
+                    {% endif %}
+                </div>
             {% endif %}
         </div>
     </div>
@@ -330,9 +536,64 @@
         <h3>Confirm Deletion</h3>
         <p id="confirmationMessage"></p>
         <div class="modal-buttons">
-            <button class="cancel-delete" onclick="closeModal()">Cancel</button>
+            <button class="cancel-action" onclick="closeModal('confirmationModal')">Cancel</button>
             <button class="confirm-delete" id="confirmDeleteBtn">Delete</button>
         </div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="edit-modal" id="editModal">
+    <div class="modal-content">
+        <h3 id="editModalTitle">Edit Record</h3>
+        <form id="editForm">
+            <!-- Hidden fields for identification -->
+            <input type="hidden" id="edit_type" name="edit_type">
+            <input type="hidden" id="edit_primary_name" name="primary_name"> <!-- Supplier/Contractor/Client -->
+            <input type="hidden" id="edit_client_name" name="client_name">
+            <input type="hidden" id="edit_project_name" name="project_name">
+            <input type="hidden" id="edit_original_date" name="original_date">
+            
+            <div class="edit-form-group">
+                <label for="edit_date">Date</label>
+                <input type="date" id="edit_date" name="date" required>
+            </div>
+            
+            <div class="edit-form-group" id="edit_amount_group">
+                <label for="edit_amount">Amount (without GST)</label>
+                <input type="number" step="0.01" id="edit_amount" name="amount" required onchange="calculateGST()">
+            </div>
+            
+            <div class="edit-form-group" id="edit_gst_group">
+                <label for="edit_gst_slab">GST Slab</label>
+                <select id="edit_gst_slab" name="gst_slab" onchange="calculateGST()">
+                    <option value="0">0%</option>
+                    <option value="5">5%</option>
+                    <option value="12">12%</option>
+                    <option value="18">18%</option>
+                    <option value="28">28%</option>
+                </select>
+                <div class="gst-components">
+                    <div class="component">SGST: <span id="sgst_amount">₹0.00</span></div>
+                    <div class="component">CGST: <span id="cgst_amount">₹0.00</span></div>
+                </div>
+            </div>
+            
+            <div class="edit-form-group" id="edit_gst_amount_group">
+                <label for="edit_gst">Total GST Amount</label>
+                <input type="number" step="0.01" id="edit_gst" name="gst_amount" readonly>
+            </div>
+            
+            <div class="edit-form-group" id="edit_total_group">
+                <label for="edit_total">Total Amount (including GST)</label>
+                <input type="number" step="0.01" id="edit_total" name="total_amount" readonly>
+            </div>
+            
+            <div class="modal-buttons">
+                <button type="button" class="cancel-action" onclick="closeModal('editModal')">Cancel</button>
+                <button type="button" class="confirm-edit" onclick="submitEdit()">Save Changes</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -367,6 +628,47 @@
     <input type="hidden" id="payment_transaction_id" name="transaction_id">
 </form>
 
+<!-- Edit Forms -->
+<form id="editSupplierForm" method="POST" action="/admin/edit/supplier-bill">
+    <input type="hidden" id="edit_supplier_name" name="supplier_name">
+    <input type="hidden" id="edit_supplier_client_name" name="client_name">
+    <input type="hidden" id="edit_supplier_project_name" name="project_name">
+    <input type="hidden" id="edit_supplier_original_date" name="original_date">
+    <input type="hidden" id="edit_supplier_bill_date" name="bill_date">
+    <input type="hidden" id="edit_supplier_bill_amount" name="bill_amount">
+    <input type="hidden" id="edit_supplier_gst_amount" name="gst_amount">
+    <input type="hidden" id="edit_supplier_total_amount" name="total_amount">
+    <input type="hidden" id="edit_supplier_original_bill_amount" name="original_bill_amount">
+    <input type="hidden" id="edit_supplier_original_gst_amount" name="original_gst_amount">
+    <input type="hidden" id="edit_supplier_original_total_amount" name="original_total_amount">
+</form>
+
+<form id="editContractorForm" method="POST" action="/admin/edit/contractor-bill">
+    <input type="hidden" id="edit_contractor_name" name="contractor_name">
+    <input type="hidden" id="edit_contractor_client_name" name="client_name">
+    <input type="hidden" id="edit_contractor_project_name" name="project_name">
+    <input type="hidden" id="edit_contractor_original_date" name="original_date">
+    <input type="hidden" id="edit_contractor_bill_date" name="bill_date">
+    <input type="hidden" id="edit_contractor_bill_amount" name="bill_amount">
+    <input type="hidden" id="edit_contractor_gst_amount" name="gst_amount">
+    <input type="hidden" id="edit_contractor_total_amount" name="total_amount">
+    <input type="hidden" id="edit_contractor_original_bill_amount" name="original_bill_amount">
+    <input type="hidden" id="edit_contractor_original_gst_amount" name="original_gst_amount">
+    <input type="hidden" id="edit_contractor_original_total_amount" name="original_total_amount">
+</form>
+
+<form id="editPaymentForm" method="POST" action="/admin/edit/client-payment">
+    <input type="hidden" id="edit_payment_client_name" name="client_name">
+    <input type="hidden" id="edit_payment_project_name" name="project_name">
+    <input type="hidden" id="edit_payment_original_date" name="original_date">
+    <input type="hidden" id="edit_payment_date" name="payment_date">
+    <input type="hidden" id="edit_payment_amount" name="amount">
+    <input type="hidden" id="edit_payment_original_amount" name="original_amount">
+    <input type="hidden" id="edit_payment_mode" name="mode_of_payment">
+    <input type="hidden" id="edit_payment_cheque_no" name="cheque_no">
+    <input type="hidden" id="edit_payment_transaction_id" name="transaction_id">
+</form>
+
 <script>
     // Tab functionality
     document.querySelectorAll('.tab').forEach(tab => {
@@ -383,6 +685,226 @@
             document.getElementById(`${tabName}-tab`).classList.add('active');
         });
     });
+
+    // Handle client selection change
+    document.getElementById('client_name').addEventListener('change', function() {
+        const clientName = this.value;
+        const projectSelect = document.getElementById('project_name');
+        
+        // Clear existing projects
+        projectSelect.innerHTML = '<option value="">Select a client first</option>';
+        
+        if (clientName) {
+            // Fetch projects for selected client
+            fetch(`/get-projects/${encodeURIComponent(clientName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.projects && data.projects.length > 0) {
+                        projectSelect.innerHTML = ''; // Clear the default option
+                        data.projects.forEach(project => {
+                            const option = document.createElement('option');
+                            option.value = project;
+                            option.textContent = project;
+                            projectSelect.appendChild(option);
+                        });
+                    } else {
+                        projectSelect.innerHTML = '<option value="">No projects found</option>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching projects:', error);
+                    projectSelect.innerHTML = '<option value="">Error loading projects</option>';
+                });
+        }
+    });
+
+    // Edit functionality
+    function openEditModal(type, name, clientName, projectName, date, amount, gstAmount, totalAmount, mode, chequeNo, transactionId) {
+        const modal = document.getElementById('editModal');
+        const title = document.getElementById('editModalTitle');
+        
+        // Set hidden fields
+        document.getElementById('edit_type').value = type;
+        document.getElementById('edit_primary_name').value = name;
+        document.getElementById('edit_client_name').value = clientName;
+        document.getElementById('edit_project_name').value = projectName;
+        document.getElementById('edit_original_date').value = date;
+        
+        // Set visible fields
+        document.getElementById('edit_date').value = date;
+        
+        // Remove currency symbol and commas for amount fields
+        let cleanAmount = amount;
+        if (typeof amount === 'string') {
+            cleanAmount = amount.replace('₹', '').replace(/,/g, '');
+        }
+        document.getElementById('edit_amount').value = cleanAmount;
+        
+        // Show/hide fields based on type
+        const gstSlabGroup = document.getElementById('edit_gst_group');
+        const gstAmountGroup = document.getElementById('edit_gst_amount_group');
+        const totalGroup = document.getElementById('edit_total_group');
+        
+        if (type === 'supplier' || type === 'contractor') {
+            title.textContent = type === 'supplier' ? 'Edit Supplier Bill' : 'Edit Contractor Bill';
+            
+            // Show GST and Total fields for supplier and contractor
+            gstSlabGroup.style.display = 'block';
+            gstAmountGroup.style.display = 'block';
+            totalGroup.style.display = 'block';
+            
+            // Clean and set GST and Total amounts
+            let cleanGst = gstAmount;
+            if (typeof gstAmount === 'string') {
+                cleanGst = gstAmount.replace('₹', '').replace(/,/g, '');
+            }
+            document.getElementById('edit_gst').value = cleanGst;
+            
+            let cleanTotal = totalAmount;
+            if (typeof totalAmount === 'string') {
+                cleanTotal = totalAmount.replace('₹', '').replace(/,/g, '');
+            }
+            document.getElementById('edit_total').value = cleanTotal;
+            
+            // Store original values for precise record identification
+            if (type === 'supplier') {
+                document.getElementById('edit_supplier_original_bill_amount').value = cleanAmount;
+                document.getElementById('edit_supplier_original_gst_amount').value = cleanGst;
+                document.getElementById('edit_supplier_original_total_amount').value = cleanTotal;
+            } else {
+                document.getElementById('edit_contractor_original_bill_amount').value = cleanAmount;
+                document.getElementById('edit_contractor_original_gst_amount').value = cleanGst;
+                document.getElementById('edit_contractor_original_total_amount').value = cleanTotal;
+            }
+            
+            // Try to determine GST slab from amount and GST amount
+            if (cleanAmount && cleanGst) {
+                const gstPercentage = Math.round((parseFloat(cleanGst) / parseFloat(cleanAmount)) * 100);
+                const gstSlabSelect = document.getElementById('edit_gst_slab');
+                
+                // Find the closest GST slab
+                if (gstPercentage <= 0) {
+                    gstSlabSelect.value = 0;
+                } else if (gstPercentage <= 5) {
+                    gstSlabSelect.value = 5;
+                } else if (gstPercentage <= 12) {
+                    gstSlabSelect.value = 12;
+                } else if (gstPercentage <= 18) {
+                    gstSlabSelect.value = 18;
+                } else {
+                    gstSlabSelect.value = 28;
+                }
+                
+                // Update SGST and CGST display
+                calculateGST();
+            }
+        } else if (type === 'payment') {
+            title.textContent = 'Edit Client Payment';
+            
+            // Hide GST and Total fields for payment
+            gstSlabGroup.style.display = 'none';
+            gstAmountGroup.style.display = 'none';
+            totalGroup.style.display = 'none';
+            
+            // Store original values for precise record identification
+            document.getElementById('edit_payment_original_amount').value = cleanAmount;
+            
+            // Set payment-specific fields
+            if (mode) document.getElementById('edit_payment_mode').value = mode;
+            if (chequeNo) document.getElementById('edit_payment_cheque_no').value = chequeNo;
+            if (transactionId) document.getElementById('edit_payment_transaction_id').value = transactionId;
+        }
+        
+        // Show modal
+        modal.style.display = 'flex';
+    }
+    
+    // Calculate GST based on slab and amount
+    function calculateGST() {
+        const amount = parseFloat(document.getElementById('edit_amount').value) || 0;
+        const gstSlab = parseFloat(document.getElementById('edit_gst_slab').value) || 0;
+        
+        // Calculate GST components
+        const gstAmount = (amount * gstSlab / 100).toFixed(2);
+        const sgstAmount = (gstAmount / 2).toFixed(2);
+        const cgstAmount = (gstAmount / 2).toFixed(2);
+        const totalAmount = (amount + parseFloat(gstAmount)).toFixed(2);
+        
+        // Update display
+        document.getElementById('edit_gst').value = gstAmount;
+        document.getElementById('edit_total').value = totalAmount;
+        document.getElementById('sgst_amount').textContent = `₹${sgstAmount}`;
+        document.getElementById('cgst_amount').textContent = `₹${cgstAmount}`;
+    }
+    
+    // Submit edit form
+    function submitEdit() {
+        const type = document.getElementById('edit_type').value;
+        const name = document.getElementById('edit_primary_name').value;
+        const clientName = document.getElementById('edit_client_name').value;
+        const projectName = document.getElementById('edit_project_name').value;
+        const originalDate = document.getElementById('edit_original_date').value;
+        const newDate = document.getElementById('edit_date').value;
+        const amount = document.getElementById('edit_amount').value;
+        
+        if (type === 'supplier') {
+            const gstAmount = document.getElementById('edit_gst').value;
+            const totalAmount = document.getElementById('edit_total').value;
+            
+            document.getElementById('edit_supplier_name').value = name;
+            document.getElementById('edit_supplier_client_name').value = clientName;
+            document.getElementById('edit_supplier_project_name').value = projectName;
+            document.getElementById('edit_supplier_original_date').value = originalDate;
+            document.getElementById('edit_supplier_bill_date').value = newDate;
+            document.getElementById('edit_supplier_bill_amount').value = amount;
+            document.getElementById('edit_supplier_gst_amount').value = gstAmount;
+            document.getElementById('edit_supplier_total_amount').value = totalAmount;
+            
+            document.getElementById('editSupplierForm').submit();
+        } else if (type === 'contractor') {
+            const gstAmount = document.getElementById('edit_gst').value;
+            const totalAmount = document.getElementById('edit_total').value;
+            
+            document.getElementById('edit_contractor_name').value = name;
+            document.getElementById('edit_contractor_client_name').value = clientName;
+            document.getElementById('edit_contractor_project_name').value = projectName;
+            document.getElementById('edit_contractor_original_date').value = originalDate;
+            document.getElementById('edit_contractor_bill_date').value = newDate;
+            document.getElementById('edit_contractor_bill_amount').value = amount;
+            document.getElementById('edit_contractor_gst_amount').value = gstAmount;
+            document.getElementById('edit_contractor_total_amount').value = totalAmount;
+            
+            document.getElementById('editContractorForm').submit();
+        } else if (type === 'payment') {
+            document.getElementById('edit_payment_client_name').value = name;
+            document.getElementById('edit_payment_project_name').value = clientName;
+            document.getElementById('edit_payment_original_date').value = originalDate;
+            document.getElementById('edit_payment_date').value = newDate;
+            document.getElementById('edit_payment_amount').value = amount;
+            
+            document.getElementById('editPaymentForm').submit();
+        }
+        
+        // Close modal after submitting
+        closeModal('editModal');
+    }
+    
+    // Close modal
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+    
+    // Close modal when clicking outside
+    window.onclick = function(event) {
+        const confirmModal = document.getElementById('confirmationModal');
+        const editModal = document.getElementById('editModal');
+        
+        if (event.target === confirmModal) {
+            closeModal('confirmationModal');
+        } else if (event.target === editModal) {
+            closeModal('editModal');
+        }
+    };
 
     // Delete confirmation
     function confirmDelete(type, name, clientName, projectName, date, amount, gstAmount, totalAmount, mode, chequeNo, transactionId) {
@@ -434,23 +956,17 @@
             }
             
             // Close modal after submitting
-            closeModal();
+            closeModal('confirmationModal');
         };
         
         // Show modal
         modal.style.display = 'flex';
     }
     
-    function closeModal() {
-        document.getElementById('confirmationModal').style.display = 'none';
+    function resetFilters() {
+        document.getElementById('client_name').value = '';
+        document.getElementById('project_name').value = '';
+        document.getElementById('filterForm').submit();
     }
-    
-    // Close modal when clicking outside
-    window.onclick = function(event) {
-        const modal = document.getElementById('confirmationModal');
-        if (event.target === modal) {
-            closeModal();
-        }
-    };
 </script>
 {% endblock %}

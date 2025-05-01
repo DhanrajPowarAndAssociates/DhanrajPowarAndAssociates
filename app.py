@@ -3,7 +3,7 @@ import Backend.routes.admin as admin
 from dotenv import load_dotenv
 import os
 
-# Load environment variables
+
 load_dotenv()
 
 app = Flask(__name__, template_folder='Frontend/templates', static_folder='Frontend/static')

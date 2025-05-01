@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for, session, flash
+from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
 from Backend.models.dbconfig import db_connection
 from functools import wraps
@@ -467,11 +467,6 @@ def printAudit(uid, pname):
         
         if from_date_obj > to_date_obj:
             flash('From Date cannot be greater than To Date', 'error')
-            return redirect(url_for('admin.all_projects', uid=uid))
-            
-        one_year_from_now = datetime.now() + timedelta(days=365)
-        if to_date_obj > one_year_from_now:
-            flash('Date range cannot exceed 1 year', 'error')
             return redirect(url_for('admin.all_projects', uid=uid))
             
         conn, cur = db_connection()
@@ -1100,66 +1095,121 @@ def delete_entries():
     # Clear any existing flash messages when just loading the page
     session.pop('_flashes', None)
     
-    # Get all supplier bill entries - using primary key columns that actually exist
-    supplier_query = '''
-        SELECT sbd.bill_date, sbd.cont_name, sbd.clientname, sbd.p_name, sbd.bill_amount, sbd.gst_amount, sbd.total_amount 
-        FROM supplier_bill_details sbd
-        ORDER BY sbd.bill_date DESC
-    '''
-    cur.execute(supplier_query)
+    # Get filter parameters
+    client_name = request.args.get('client_name')
+    project_name = request.args.get('project_name')
+    
+    # Initialize empty lists for records
     supplier_bills = []
-    for row in cur.fetchall():
-        # Create a unique identifier by combining fields
-        unique_id = f"{row[0].strftime('%Y%m%d')}_{row[1]}_{row[2]}_{row[3]}"
-        supplier_bills.append({
-            'unique_id': unique_id,
-            'bill_date': row[0].strftime('%Y-%m-%d') if row[0] else '',
-            'supplier_name': row[1],
-            'client_name': row[2],
-            'project_name': row[3],
-            'bill_amount': row[4],
-            'gst_amount': row[5],
-            'total_amount': row[6]
-        })
-    contractor_query = '''
-        SELECT cbd.bill_date, cbd.cont_name, cbd.clientname, cbd.p_name, cbd.bill_amount, cbd.gst_amount, cbd.total_amount
-        FROM contractor_bill_details cbd
-        ORDER BY cbd.bill_date DESC
-    '''
-    cur.execute(contractor_query)
     contractor_bills = []
-    for row in cur.fetchall():
-        unique_id = f"{row[0].strftime('%Y%m%d')}_{row[1]}_{row[2]}_{row[3]}"
-        contractor_bills.append({
-            'unique_id': unique_id,
-            'bill_date': row[0].strftime('%Y-%m-%d') if row[0] else '',
-            'contractor_name': row[1],
-            'client_name': row[2],
-            'project_name': row[3],
-            'bill_amount': row[4],
-            'gst_amount': row[5],
-            'total_amount': row[6]
-        })
-    payment_query = '''
-        SELECT pd.date, pd.clientname, pd.project_name, pd.amount, pd.mode_of_payment, pd.cheque_no, pd.transaction_id
-        FROM payment_details pd
-        ORDER BY pd.date DESC
-    '''
-    cur.execute(payment_query)
     client_payments = []
-    for row in cur.fetchall():
-        # Create a unique identifier by combining fields
-        unique_id = f"{row[0].strftime('%Y%m%d')}_{row[1]}_{row[2]}_{row[3]}"
-        client_payments.append({
-            'unique_id': unique_id,
-            'payment_date': row[0].strftime('%Y-%m-%d') if row[0] else '',
-            'client_name': row[1],
-            'project_name': row[2],
-            'amount': row[3],
-            'mode_of_payment': row[4],
-            'cheque_no': row[5] if row[5] != "NULL" else "-",
-            'transaction_id': row[6] if row[6] != "NULL" else "-"
-        })
+    
+    # Only fetch records if at least one filter is applied
+    if client_name or project_name:
+        # Get supplier bill entries with filters
+        supplier_query = '''
+            SELECT sbd.bill_date, sbd.cont_name, sbd.clientname, sbd.p_name, sbd.bill_amount, sbd.gst_amount, sbd.total_amount 
+            FROM supplier_bill_details sbd
+            WHERE 1=1
+        '''
+        supplier_params = []
+        
+        if client_name:
+            supplier_query += " AND sbd.clientname = %s"
+            supplier_params.append(client_name)
+        if project_name:
+            supplier_query += " AND sbd.p_name = %s"
+            supplier_params.append(project_name)
+            
+        supplier_query += " ORDER BY sbd.bill_date DESC"
+        
+        cur.execute(supplier_query, supplier_params)
+        for row in cur.fetchall():
+            unique_id = f"{row[0].strftime('%Y%m%d')}_{row[1]}_{row[2]}_{row[3]}"
+            supplier_bills.append({
+                'unique_id': unique_id,
+                'bill_date': row[0].strftime('%Y-%m-%d') if row[0] else '',
+                'supplier_name': row[1],
+                'client_name': row[2],
+                'project_name': row[3],
+                'bill_amount': row[4],
+                'gst_amount': row[5],
+                'total_amount': row[6]
+            })
+            
+        # Get contractor bills with filters
+        contractor_query = '''
+            SELECT cbd.bill_date, cbd.cont_name, cbd.clientname, cbd.p_name, cbd.bill_amount, cbd.gst_amount, cbd.total_amount
+            FROM contractor_bill_details cbd
+            WHERE 1=1
+        '''
+        contractor_params = []
+        
+        if client_name:
+            contractor_query += " AND cbd.clientname = %s"
+            contractor_params.append(client_name)
+        if project_name:
+            contractor_query += " AND cbd.p_name = %s"
+            contractor_params.append(project_name)
+            
+        contractor_query += " ORDER BY cbd.bill_date DESC"
+        
+        cur.execute(contractor_query, contractor_params)
+        for row in cur.fetchall():
+            unique_id = f"{row[0].strftime('%Y%m%d')}_{row[1]}_{row[2]}_{row[3]}"
+            contractor_bills.append({
+                'unique_id': unique_id,
+                'bill_date': row[0].strftime('%Y-%m-%d') if row[0] else '',
+                'contractor_name': row[1],
+                'client_name': row[2],
+                'project_name': row[3],
+                'bill_amount': row[4],
+                'gst_amount': row[5],
+                'total_amount': row[6]
+            })
+            
+        # Get client payments with filters
+        payment_query = '''
+            SELECT pd.date, pd.clientname, pd.project_name, pd.amount, pd.mode_of_payment, pd.cheque_no, pd.transaction_id
+            FROM payment_details pd
+            WHERE 1=1
+        '''
+        payment_params = []
+        
+        if client_name:
+            payment_query += " AND pd.clientname = %s"
+            payment_params.append(client_name)
+        if project_name:
+            payment_query += " AND pd.project_name = %s"
+            payment_params.append(project_name)
+            
+        payment_query += " ORDER BY pd.date DESC"
+        
+        cur.execute(payment_query, payment_params)
+        for row in cur.fetchall():
+            unique_id = f"{row[0].strftime('%Y%m%d')}_{row[1]}_{row[2]}_{row[3]}"
+            client_payments.append({
+                'unique_id': unique_id,
+                'payment_date': row[0].strftime('%Y-%m-%d') if row[0] else '',
+                'client_name': row[1],
+                'project_name': row[2],
+                'amount': row[3],
+                'mode_of_payment': row[4],
+                'cheque_no': row[5] if row[5] != "NULL" else "-",
+                'transaction_id': row[6] if row[6] != "NULL" else "-"
+            })
+    
+    # Get lists for dropdowns
+    client_query = "SELECT DISTINCT c_name FROM client_details ORDER BY c_name"
+    cur.execute(client_query)
+    clients = [row[0] for row in cur.fetchall()]
+    
+    # Get projects based on selected client or empty if no client selected
+    projects = []
+    if client_name:
+        project_query = "SELECT DISTINCT p_name FROM project_details WHERE c_name = %s ORDER BY p_name"
+        cur.execute(project_query, (client_name,))
+        projects = [row[0] for row in cur.fetchall()]
     
     cur.close()
     conn.close()
@@ -1167,7 +1217,11 @@ def delete_entries():
     return render_template('admin/delete_entries.html', 
                           supplier_bills=supplier_bills,
                           contractor_bills=contractor_bills,
-                          client_payments=client_payments)
+                          client_payments=client_payments,
+                          clients=clients,
+                          projects=projects,
+                          selected_client=client_name,
+                          selected_project=project_name)
 
 @admin.route('/admin/delete/supplier-bill', methods=['POST'])
 @admin_required
@@ -1714,3 +1768,244 @@ def all_contractors():
 @admin.errorhandler(CSRFError)
 def handle_csrf_error(e):
     return render_template('error.html', message="CSRF token is missing or invalid. Please try again."), 400
+
+@admin.route('/admin/edit/supplier-bill', methods=['POST'])
+@admin_required
+def edit_supplier_bill():
+    if request.method == 'POST':
+        try:
+            # Get form data
+            supplier_name = request.form.get('supplier_name')
+            client_name = request.form.get('client_name')
+            project_name = request.form.get('project_name')
+            original_date = request.form.get('original_date')
+            new_date = request.form.get('bill_date')
+            bill_amount = request.form.get('bill_amount')
+            gst_amount = request.form.get('gst_amount')
+            total_amount = request.form.get('total_amount')
+            
+            # Validate required fields
+            if not all([supplier_name, client_name, project_name, original_date, new_date, bill_amount]):
+                flash("Missing required fields", "error")
+                return redirect(url_for('admin.delete_entries'))
+            
+            # Clean amount values
+            try:
+                original_bill_amount = float(request.form.get('original_bill_amount', '0').replace('₹', '').replace(',', '').strip())
+                original_gst_amount = float(request.form.get('original_gst_amount', '0').replace('₹', '').replace(',', '').strip())
+                original_total_amount = float(request.form.get('original_total_amount', '0').replace('₹', '').replace(',', '').strip())
+                
+                bill_amount = float(bill_amount.replace('₹', '').replace(',', '').strip()) if bill_amount else None
+                gst_amount = float(gst_amount.replace('₹', '').replace(',', '').strip()) if gst_amount else None
+                total_amount = float(total_amount.replace('₹', '').replace(',', '').strip()) if total_amount else None
+            except ValueError as ve:
+                flash(f"Invalid amount format: {str(ve)}", "error")
+                return redirect(url_for('admin.delete_entries'))
+            
+            conn, cur = db_connection()
+            
+            # Update query with precise filtering
+            query = """
+                UPDATE supplier_bill_details
+                SET bill_date = %s, bill_amount = %s, gst_amount = %s, total_amount = %s
+                WHERE cont_name = %s 
+                AND clientname = %s 
+                AND p_name = %s 
+                AND bill_date = %s
+            """
+            
+            # Add additional filters for existing amount fields to ensure we're updating the correct record
+            params = [new_date, bill_amount, gst_amount, total_amount, supplier_name, client_name, project_name, original_date]
+            
+            # If we have original amounts, use them to further filter the record
+            if original_bill_amount > 0:
+                query += " AND bill_amount = %s"
+                params.append(original_bill_amount)
+            
+            if original_gst_amount > 0:
+                query += " AND gst_amount = %s"
+                params.append(original_gst_amount)
+            
+            if original_total_amount > 0:
+                query += " AND total_amount = %s"
+                params.append(original_total_amount)
+            
+            cur.execute(query, params)
+            updated_count = cur.rowcount
+            
+            if updated_count > 0:
+                conn.commit()
+                flash(f"Successfully updated supplier bill")
+            else:
+                conn.rollback()
+                flash("Supplier bill not found or no changes made", "error")
+            
+            cur.close()
+            conn.close()
+            
+        except Exception as e:
+            flash(f"Error updating supplier bill: {str(e)}", "error")
+            print(f"Exception during supplier bill update: {str(e)}")
+        
+        return redirect(url_for('admin.delete_entries'))
+
+@admin.route('/admin/edit/contractor-bill', methods=['POST'])
+@admin_required
+def edit_contractor_bill():
+    if request.method == 'POST':
+        try:
+            # Get form data
+            contractor_name = request.form.get('contractor_name')
+            client_name = request.form.get('client_name')
+            project_name = request.form.get('project_name')
+            original_date = request.form.get('original_date')
+            new_date = request.form.get('bill_date')
+            bill_amount = request.form.get('bill_amount')
+            gst_amount = request.form.get('gst_amount')
+            total_amount = request.form.get('total_amount')
+            
+            # Validate required fields
+            if not all([contractor_name, client_name, project_name, original_date, new_date, bill_amount]):
+                flash("Missing required fields", "error")
+                return redirect(url_for('admin.delete_entries'))
+            
+            # Clean amount values
+            try:
+                original_bill_amount = float(request.form.get('original_bill_amount', '0').replace('₹', '').replace(',', '').strip())
+                original_gst_amount = float(request.form.get('original_gst_amount', '0').replace('₹', '').replace(',', '').strip())
+                original_total_amount = float(request.form.get('original_total_amount', '0').replace('₹', '').replace(',', '').strip())
+                
+                bill_amount = float(bill_amount.replace('₹', '').replace(',', '').strip()) if bill_amount else None
+                gst_amount = float(gst_amount.replace('₹', '').replace(',', '').strip()) if gst_amount else None
+                total_amount = float(total_amount.replace('₹', '').replace(',', '').strip()) if total_amount else None
+            except ValueError as ve:
+                flash(f"Invalid amount format: {str(ve)}", "error")
+                return redirect(url_for('admin.delete_entries'))
+            
+            conn, cur = db_connection()
+            
+            # Update query with precise filtering
+            query = """
+                UPDATE contractor_bill_details
+                SET bill_date = %s, bill_amount = %s, gst_amount = %s, total_amount = %s
+                WHERE cont_name = %s 
+                AND clientname = %s 
+                AND p_name = %s 
+                AND bill_date = %s
+            """
+            
+            # Add additional filters for existing amount fields to ensure we're updating the correct record
+            params = [new_date, bill_amount, gst_amount, total_amount, contractor_name, client_name, project_name, original_date]
+            
+            # If we have original amounts, use them to further filter the record
+            if original_bill_amount > 0:
+                query += " AND bill_amount = %s"
+                params.append(original_bill_amount)
+            
+            if original_gst_amount > 0:
+                query += " AND gst_amount = %s"
+                params.append(original_gst_amount)
+            
+            if original_total_amount > 0:
+                query += " AND total_amount = %s"
+                params.append(original_total_amount)
+            
+            cur.execute(query, params)
+            updated_count = cur.rowcount
+            
+            if updated_count > 0:
+                conn.commit()
+                flash(f"Successfully updated contractor bill")
+            else:
+                conn.rollback()
+                flash("Contractor bill not found or no changes made", "error")
+            
+            cur.close()
+            conn.close()
+            
+        except Exception as e:
+            flash(f"Error updating contractor bill: {str(e)}", "error")
+            print(f"Exception during contractor bill update: {str(e)}")
+        
+        return redirect(url_for('admin.delete_entries'))
+
+@admin.route('/admin/edit/client-payment', methods=['POST'])
+@admin_required
+def edit_client_payment():
+    if request.method == 'POST':
+        try:
+            # Get form data
+            client_name = request.form.get('client_name')
+            project_name = request.form.get('project_name')
+            original_date = request.form.get('original_date')
+            new_date = request.form.get('payment_date')
+            amount = request.form.get('amount')
+            mode_of_payment = request.form.get('mode_of_payment')
+            cheque_no = request.form.get('cheque_no')
+            transaction_id = request.form.get('transaction_id')
+            
+            # Validate required fields
+            if not all([client_name, project_name, original_date, new_date, amount]):
+                flash("Missing required fields", "error")
+                return redirect(url_for('admin.delete_entries'))
+            
+            # Clean amount value
+            try:
+                original_amount = float(request.form.get('original_amount', '0').replace('₹', '').replace(',', '').strip())
+                amount = float(amount.replace('₹', '').replace(',', '').strip()) if amount else None
+            except ValueError as ve:
+                flash(f"Invalid amount format: {str(ve)}", "error")
+                return redirect(url_for('admin.delete_entries'))
+            
+            conn, cur = db_connection()
+            
+            # Update query with precise filtering
+            query = """
+                UPDATE payment_details
+                SET date = %s, amount = %s
+                WHERE clientname = %s 
+                AND project_name = %s 
+                AND date = %s
+            """
+            
+            # Add additional filters for existing fields to ensure we're updating the correct record
+            params = [new_date, amount, client_name, project_name, original_date]
+            
+            # If we have original amount, use it to further filter the record
+            if original_amount > 0:
+                query += " AND amount = %s"
+                params.append(original_amount)
+            
+            # Add mode condition if available
+            if mode_of_payment and mode_of_payment != 'null' and mode_of_payment != '-':
+                query += " AND mode_of_payment = %s"
+                params.append(mode_of_payment)
+            
+            # Add cheque_no condition if available
+            if cheque_no and cheque_no != 'null' and cheque_no != '-':
+                query += " AND cheque_no = %s"
+                params.append(cheque_no)
+            
+            # Add transaction_id condition if available
+            if transaction_id and transaction_id != 'null' and transaction_id != '-':
+                query += " AND transaction_id = %s"
+                params.append(transaction_id)
+            
+            cur.execute(query, params)
+            updated_count = cur.rowcount
+            
+            if updated_count > 0:
+                conn.commit()
+                flash(f"Successfully updated client payment")
+            else:
+                conn.rollback()
+                flash("Client payment not found or no changes made", "error")
+            
+            cur.close()
+            conn.close()
+            
+        except Exception as e:
+            flash(f"Error updating client payment: {str(e)}", "error")
+            print(f"Exception during client payment update: {str(e)}")
+        
+        return redirect(url_for('admin.delete_entries'))
