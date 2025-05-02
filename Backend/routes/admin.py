@@ -97,7 +97,7 @@ def new_supplier():
             conn.close()
             cur.close()
         except Exception as e:
-            # Error handling without print
+            # Silent exception handling
             pass
         return redirect(url_for('admin.admin_dashboard'))
     return render_template('admin/contractor_form.html')
@@ -178,6 +178,7 @@ def new_contractor():
             'phone': request.form['phone'],
             'gstin': request.form['gstin']
         }
+        print("New Contractor Details:", contractor)
         conn,cur=db_connection()
         query='''INSERT INTO contractors_details(cont_name,caddress,email,phone_no,gstin) VALUES (%s,%s,%s,%s,%s)'''
         cur.execute(query,(contractor['name'],contractor['location'],contractor['email'],contractor['phone'],contractor['gstin']))
@@ -696,13 +697,13 @@ def supervisor_dashboard():
             super_email=row[2], 
             phone=row[3]
         ) for row in data]
-    except Exception as e:
-        # Error handling without print
+    except Exception:
+        # Silent exception handling
         pass
     finally:
         cur.close()
         conn.close()
-    return render_template('admin/supervisor_dashboard_admin.html',supervisor_details=supervisor_details)
+    return render_template('admin/supervisor_dashboard_admin.html',supervisor_details=supervisor_details)  
 
 @admin.route('/admin/assign-tasks', methods=['GET', 'POST'])
 @admin_required
@@ -748,8 +749,6 @@ def assign_task():
 @admin_required
 def view_tasks():
     conn, cur = db_connection()
-    
-    # Main query - removed debug query and print statements
     query = '''
         SELECT t.supervisor_name, t.project_name, p.p_location, t.start_date, 
         COALESCE(t.status,
@@ -813,8 +812,7 @@ def supervisor_dashboard_view(supervisor_name):
             description=row[5],
             remarks=row[6]
         ) for row in cur.fetchall()]
-    except Exception as e:
-        # Error handling without print
+    except Exception:
         tasks = []
     finally:
         cur.close()
@@ -864,7 +862,7 @@ def add_admin_user():
             conn.close()
             return redirect(url_for('admin.add_admin_user'))
         except Exception as e:
-            # Error handling without print
+            print(f"Error adding admin: {e}")
             cur.close()
             conn.close()
             users = get_users()
@@ -894,7 +892,7 @@ def change_password():
         conn.close()
         return redirect(url_for('admin.add_admin_user'))
     except Exception as e:
-        # Error handling without print
+        print(f"Error changing password: {e}")
         cur.close()
         conn.close()
         return redirect(url_for('admin.add_admin_user'))
@@ -932,7 +930,7 @@ def delete_user(username):
         flash("User deleted successfully")
     except Exception as e:
         conn.rollback()
-        # Error handling without print
+        print(f"Error deleting user: {e}")
         flash(f"Error deleting user: {str(e)}", "error")
     finally:
         cur.close()
@@ -958,8 +956,8 @@ def update_task():
             '''
             cur.execute(query, (status, remarks, task_id))
             conn.commit()
-        except Exception as e:
-            # Error handling without print
+        except Exception:
+            # Silent exception handling
             pass
         finally:
             cur.close()
@@ -989,14 +987,15 @@ def supervisor_expenditurelist(supervisor_name):
             date=row[3].strftime('%Y-%m-%d')
         ) for row in cur.fetchall()]
     except Exception as e:
-        # Error handling without print
-        pass
+        print(f"Error fetching data: {e}")
     finally:
         cur.close()
         conn.close()
     return render_template('admin/supervisor_expenditure_list.html', 
                          supervisor_name=supervisor_name,
                          expenditures=expenditures)
+
+
 
 @admin.route('/supervisor/expenditure/<supervisor_name>', methods=['GET', 'POST'])
 @admin_required
@@ -1020,8 +1019,7 @@ def supervisor_expenditure(supervisor_name):
             cur.execute(query, (supervisor_name, project_name, amount, description))
             conn.commit()
         except Exception as e:
-            # Error handling without print
-            pass
+            print(f"Error submitting expenditure: {e}")
     projects = []
     expenditures = []
     try:
@@ -1047,8 +1045,7 @@ def supervisor_expenditure(supervisor_name):
             date=row[3].strftime('%Y-%m-%d')
         ) for row in cur.fetchall()]
     except Exception as e:
-        # Error handling without print
-        pass
+        print(f"Error fetching data: {e}")
     finally:
         cur.close()
         conn.close()
@@ -1082,8 +1079,7 @@ def all_expenditures():
             date=row[4].strftime('%Y-%m-%d')
         ) for row in cur.fetchall()]
     except Exception as e:
-        # Error handling without print
-        pass
+        print(f"Error fetching expenditures: {e}")
     finally:
         cur.close()
         conn.close()
@@ -1338,6 +1334,10 @@ def delete_client_payment():
             amount_str = request.form.get('amount')
             mode_of_payment = request.form.get('mode_of_payment')
             
+            # Print received values for debugging
+            print(f"DELETE PAYMENT - Client: {client_name}, Project: {project_name}")
+            print(f"Date: {payment_date}, Amount: {amount_str}, Mode: {mode_of_payment}")
+            
             # Convert amount to float
             amount = None
             if amount_str:
@@ -1346,9 +1346,9 @@ def delete_client_payment():
                     if amount_str.startswith('₹'):
                         amount_str = amount_str[1:].strip()
                     amount = float(amount_str.replace(',', ''))
+                    print(f"Converted amount: {amount}")
                 except ValueError:
-                    # Handle conversion error without print
-                    pass
+                    print(f"Failed to convert amount: {amount_str}")
             
             conn, cur = db_connection()
             
@@ -1364,35 +1364,44 @@ def delete_client_payment():
                     date_obj = datetime.strptime(payment_date, '%Y-%m-%d')
                     query += " AND date = %s"
                     params.append(date_obj.strftime('%Y-%m-%d'))
+                    print(f"Added date condition: {date_obj.strftime('%Y-%m-%d')}")
                 except ValueError:
-                    # Handle date format error without print
-                    pass
+                    print(f"Invalid date format: {payment_date}")
+                    # If date format is invalid, don't add it to the query
             
             # Optional: Add amount condition if available
             if amount is not None:
                 query += " AND amount = %s"
                 params.append(amount)
+                print(f"Added amount condition: {amount}")
             
             # Optional: Add mode condition if available
             if mode_of_payment and mode_of_payment != 'null' and mode_of_payment != '-':
                 query += " AND mode_of_payment = %s"
                 params.append(mode_of_payment)
+                print(f"Added mode condition: {mode_of_payment}")
             
             # Execute query and commit
+            print(f"Executing query: {query}")
+            print(f"With parameters: {params}")
+            
             cur.execute(query, params)
             deleted_count = cur.rowcount
             
             if deleted_count > 0:
                 conn.commit()
                 flash(f"Successfully deleted {deleted_count} payment(s)")
+                print(f"Deleted {deleted_count} payment(s)")
             else:
                 flash("No payments found matching the criteria", "error")
+                print("No matching payments found")
             
             cur.close()
             conn.close()
             
         except Exception as e:
             flash(f"Error deleting payment: {str(e)}", "error")
+            print(f"Exception during deletion: {str(e)}")
         
         return redirect(url_for('admin.delete_entries'))
 
