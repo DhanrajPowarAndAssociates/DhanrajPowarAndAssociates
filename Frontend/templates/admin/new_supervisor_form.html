@@ -4,6 +4,9 @@
 <div class="main flex">
     <div class="form-container container">
         <div class="title">Supervisor Details</div>
+        {% if error %}
+        <div class="error" style="color: #dc3545; background-color: #f8d7da; padding: 10px; border-radius: 4px; margin-bottom: 15px;">{{ error }}</div>
+        {% endif %}
         <form method="POST" class="flex-col">
             <div class="form-group">
                 <label for="name">Supervisor Name</label>

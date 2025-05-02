@@ -54,7 +54,6 @@ def admin_dashboard():
     cur.execute(query)
     data=cur.fetchall()
     client_details = [dict(c_name=row[0], c_address=row[1], c_email=row[2], c_phone=row[3]) for row in data]
-    print(client_details[0]['c_name'])
     return render_template('admin/dashboard.html', client_details=client_details)
 
 
@@ -69,7 +68,6 @@ def new_user():
             'email': request.form['email'],
             'phone': request.form['phone']
         }
-        print("New Customer Details:", customer)
         conn,cur=db_connection()
         query='''INSERT INTO client_details(c_name,c_address,c_email,c_phone) VALUES (%s,%s,%s,%s)'''
         cur.execute(query,(customer['name'],customer['location'],customer['email'],customer['phone']))
@@ -91,7 +89,6 @@ def new_supplier():
             'phone': request.form['phone'],
             'gstin': request.form['gstin']
         }
-        print("New Supplier Details:", supplier)
         try:
             conn,cur=db_connection()
             query='''INSERT INTO suppliers_details(cont_name,saddress,email,phone_no,gstin) VALUES (%s,%s,%s,%s,%s)'''
@@ -100,7 +97,8 @@ def new_supplier():
             conn.close()
             cur.close()
         except Exception as e:
-            print(f"Error: {e}")
+            # Error handling without print
+            pass
         return redirect(url_for('admin.admin_dashboard'))
     return render_template('admin/contractor_form.html')
 
@@ -137,8 +135,6 @@ def new_project():
             'total_budget': int(request.form.get('total_budget', 0)),
             'description': request.form['description']
         }
-
-        print("New Project Details:", project)
 
         conn, cur = db_connection()
 
@@ -182,7 +178,6 @@ def new_contractor():
             'phone': request.form['phone'],
             'gstin': request.form['gstin']
         }
-        print("New Contractor Details:", contractor)
         conn,cur=db_connection()
         query='''INSERT INTO contractors_details(cont_name,caddress,email,phone_no,gstin) VALUES (%s,%s,%s,%s,%s)'''
         cur.execute(query,(contractor['name'],contractor['location'],contractor['email'],contractor['phone'],contractor['gstin']))
@@ -209,7 +204,6 @@ def supplier_payment():
             'gst_amount': float(request.form.get('gst_amount', 0)),
             'total_amount': float(request.form.get('total_amount', 0))
         }
-        print("Supplier Bill Details:", bill)
         conn,cur=db_connection()
         query='''INSERT INTO supplier_bill_details(cont_name,clientname,p_name,bill_date,bill_amount,gst_percent,gst_amount,total_amount) 
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
@@ -258,7 +252,6 @@ def client_payment():
         conn.commit()
         cur.close()
         conn.close()
-        print("Client Payment Details:", payment)
         return redirect(url_for('admin.admin_dashboard'))
     return render_template('admin/client_payment.html',clients=clientlist,projects=projectlist)
 
@@ -278,7 +271,6 @@ def contractor_payment():
             'gst_amount': float(request.form.get('gst_amount', 0)),
             'total_amount': float(request.form.get('total_amount', 0))
         }
-        print("Contractor Bill Details:", bill)
         conn,cur=db_connection()
         query='''INSERT INTO contractor_bill_details(cont_name,clientname,p_name,bill_date,bill_amount,gst_percent,gst_amount,total_amount) 
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
@@ -448,7 +440,6 @@ def printProject(uid, pname):
         )
     
     except Exception as e:
-        print(f"Error in printProject: {e}")
         return render_template("admin/error.html", error_message=f"An error occurred: {str(e)}")
 
 @admin.route('/admin/projects/audit/<uid>/<pname>', methods=['GET', 'POST'])
@@ -627,33 +618,67 @@ def get_projects(client_name):
 @admin_required
 def new_supervisor():
     if request.method == 'POST':
-        location = f"{request.form['address']}, {request.form['city']}, {request.form['state']} - {request.form['pincode']}"
-        supervisor = {
-            'name': request.form['name'],
-            'location': location,
-            'email': request.form['email'],
-            'phone': request.form['phone'],
-            'password': generate_password_hash(request.form['password'])
-        }
-        print("New Supervisor Details:", supervisor)
+        supervisor_name = request.form['name']
+        
+        # Check if supervisor already exists
         conn, cur = db_connection()
-        query = '''INSERT INTO supervisor_details(super_name, super_address, super_email, phone_no, "super_Password") 
-                  VALUES (%s, %s, %s, %s, %s)'''
-        cur.execute(query, (
-            supervisor['name'],
-            supervisor['location'],
-            supervisor['email'],
-            supervisor['phone'],
-            supervisor['password']
-        ))
-        query = '''INSERT INTO admin_info
-                  (ausername, apass, apost) 
-                  VALUES (%s, %s, %s)'''
-        cur.execute(query,(supervisor['name'],supervisor['password'],"supervisor"))
-        conn.commit()
-        cur.close()
-        conn.close()
-        return redirect(url_for('admin.admin_dashboard'))
+        try:
+            check_query = '''SELECT super_name FROM supervisor_details WHERE super_name = %s'''
+            cur.execute(check_query, (supervisor_name,))
+            existing_supervisor = cur.fetchone()
+            
+            if existing_supervisor:
+                cur.close()
+                conn.close()
+                flash("A supervisor with this name already exists.", "error")
+                return render_template('admin/new_supervisor_form.html', error="A supervisor with this name already exists.")
+            
+            location = f"{request.form['address']}, {request.form['city']}, {request.form['state']} - {request.form['pincode']}"
+            supervisor = {
+                'name': supervisor_name,
+                'location': location,
+                'email': request.form['email'],
+                'phone': request.form['phone'],
+                'password': generate_password_hash(request.form['password'])
+            }
+            
+            # Check if user exists in admin_info
+            check_admin_query = '''SELECT ausername FROM admin_info WHERE ausername = %s'''
+            cur.execute(check_admin_query, (supervisor_name,))
+            existing_admin = cur.fetchone()
+            
+            if existing_admin:
+                cur.close()
+                conn.close()
+                flash("A user with this name already exists in the system.", "error")
+                return render_template('admin/new_supervisor_form.html', error="A user with this name already exists in the system.")
+            
+            query = '''INSERT INTO supervisor_details(super_name, super_address, super_email, phone_no, "super_Password") 
+                      VALUES (%s, %s, %s, %s, %s)'''
+            cur.execute(query, (
+                supervisor['name'],
+                supervisor['location'],
+                supervisor['email'],
+                supervisor['phone'],
+                supervisor['password']
+            ))
+            
+            query = '''INSERT INTO admin_info
+                      (ausername, apass, apost) 
+                      VALUES (%s, %s, %s)'''
+            cur.execute(query, (supervisor['name'], supervisor['password'], "supervisor"))
+            
+            conn.commit()
+            flash("Supervisor added successfully")
+            return redirect(url_for('admin.admin_dashboard'))
+        except Exception as e:
+            conn.rollback()
+            flash(f"Error adding supervisor: {str(e)}", "error")
+            return render_template('admin/new_supervisor_form.html', error=f"Error: {str(e)}")
+        finally:
+            cur.close()
+            conn.close()
+            
     return render_template('admin/new_supervisor_form.html')
 
 @admin.route('/admin/supervisor-dashboard', methods=['GET'])
@@ -672,11 +697,12 @@ def supervisor_dashboard():
             phone=row[3]
         ) for row in data]
     except Exception as e:
-        print(f"Error: {e}")
+        # Error handling without print
+        pass
     finally:
         cur.close()
         conn.close()
-    return render_template('admin/supervisor_dashboard_admin.html',supervisor_details=supervisor_details)  
+    return render_template('admin/supervisor_dashboard_admin.html',supervisor_details=supervisor_details)
 
 @admin.route('/admin/assign-tasks', methods=['GET', 'POST'])
 @admin_required
@@ -722,13 +748,17 @@ def assign_task():
 @admin_required
 def view_tasks():
     conn, cur = db_connection()
+    
+    # Main query - removed debug query and print statements
     query = '''
-        SELECT t.supervisor_name, t.project_name, p.p_location, t.start_date,
-        CASE 
-            WHEN CURRENT_DATE < t.start_date THEN 'Pending'
-            WHEN CURRENT_DATE > DATE(t.start_date + INTERVAL '1 DAY' * t.duration) THEN 'Completed'
-            ELSE 'Ongoing'
-        END as status, t.description
+        SELECT t.supervisor_name, t.project_name, p.p_location, t.start_date, 
+        COALESCE(t.status,
+            CASE 
+                WHEN CURRENT_DATE < t.start_date THEN 'Pending'
+                WHEN CURRENT_DATE > (t.start_date + (t.duration || ' days')::INTERVAL) THEN 'Completed'
+                ELSE 'Ongoing'
+            END
+        ) as status, t.description, COALESCE(t.remarks, '') as remarks
         FROM task_assignments t
         LEFT JOIN project_details p ON t.project_name = p.p_name
         ORDER BY t.start_date DESC
@@ -740,12 +770,13 @@ def view_tasks():
         site_location=row[2],
         start_date=row[3].strftime('%Y-%m-%d') if row[3] else '',
         status=row[4],
-        description=row[5]
+        description=row[5],
+        remarks=row[6]
     ) for row in cur.fetchall()]
-    print(tasks)
+    
     cur.close()
     conn.close()
-    return render_template('admin/view_task.html',tasks=tasks)
+    return render_template('admin/view_task.html', tasks=tasks)
 
 @admin.route('/supervisor/dashboard/<supervisor_name>', methods=['GET', 'POST'])
 @admin_required
@@ -760,7 +791,7 @@ def supervisor_dashboard_view(supervisor_name):
                COALESCE(t.status, 
                     CASE 
                         WHEN CURRENT_DATE < t.start_date THEN 'Pending'
-                        WHEN CURRENT_DATE > DATE(t.start_date + (t.duration || ' days')::INTERVAL) THEN 'Completed'
+                        WHEN CURRENT_DATE > (t.start_date + (t.duration || ' days')::INTERVAL) THEN 'Completed'
                         ELSE 'Ongoing'
                     END
                ) as status, t.description,
@@ -783,7 +814,7 @@ def supervisor_dashboard_view(supervisor_name):
             remarks=row[6]
         ) for row in cur.fetchall()]
     except Exception as e:
-        print(f"Error fetching tasks: {e}")
+        # Error handling without print
         tasks = []
     finally:
         cur.close()
@@ -797,101 +828,52 @@ def add_admin_user():
     if session.get('user_type') != 'admin':
         return redirect(url_for('admin.admin_dashboard'))
 
-    def get_users_and_supervisors():
+    def get_users():
         conn, cur = db_connection()
         query = '''SELECT ausername, apost FROM admin_info ORDER BY apost, ausername'''
         cur.execute(query)
         users = [dict(username=row[0], user_type=row[1]) for row in cur.fetchall()]
-        
-        supervisor_query = '''SELECT super_name FROM supervisor_details'''
-        cur.execute(supervisor_query)
-        supervisors = [row[0] for row in cur.fetchall()]
-        
         cur.close()
         conn.close()
-        return users, supervisors
+        return users
 
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
-        user_type = request.form['user_type']
+        user_type = 'admin'  # Always set to admin
+        
         conn, cur = db_connection()
+        check_query = '''SELECT ausername FROM admin_info WHERE ausername = %s'''
+        cur.execute(check_query, (username,))
+        existing_user = cur.fetchone()
+        
+        if existing_user:
+            cur.close()
+            conn.close()
+            users = get_users()
+            return render_template('admin/add_user_form.html', 
+                error="Username already exists",
+                users=users)
 
-        if user_type == 'supervisor':
-            supervisor_check = '''SELECT super_name FROM supervisor_details WHERE super_name = %s'''
-            cur.execute(supervisor_check, (username,))
-            is_valid_supervisor = cur.fetchone()
-
-            if not is_valid_supervisor:
-                cur.close()
-                conn.close()
-                users, supervisors = get_users_and_supervisors()
-                return render_template('admin/add_user_form.html', 
-                    error="Invalid supervisor name",
-                    users=users, 
-                    supervisors=supervisors)
-
-            admin_check = '''SELECT ausername FROM admin_info WHERE ausername = %s AND apost = 'supervisor' '''
-            cur.execute(admin_check, (username,))
-            existing_admin = cur.fetchone()
-            
+        try:
             hashed_password = generate_password_hash(password)
-            
-            try:
-                if existing_admin:
-                    update_query = '''UPDATE admin_info SET apass = %s WHERE ausername = %s AND apost = 'supervisor' '''
-                    cur.execute(update_query, (hashed_password, username))
-                else:
-                    insert_query = '''INSERT INTO admin_info (ausername, apass, apost) VALUES (%s, %s, 'supervisor')'''
-                    cur.execute(insert_query, (username, hashed_password))
-                
-                conn.commit()
-                cur.close()
-                conn.close()
-                return redirect(url_for('admin.add_admin_user'))
-            except Exception as e:
-                print(f"Error managing supervisor: {e}")
-                cur.close()
-                conn.close()
-                users, supervisors = get_users_and_supervisors()
-                return render_template('admin/add_user_form.html', 
-                    error=f"Error: {str(e)}",
-                    users=users, 
-                    supervisors=supervisors)
-        else:
-            check_query = '''SELECT ausername FROM admin_info WHERE ausername = %s'''
-            cur.execute(check_query, (username,))
-            existing_user = cur.fetchone()
-            
-            if existing_user:
-                cur.close()
-                conn.close()
-                users, supervisors = get_users_and_supervisors()
-                return render_template('admin/add_user_form.html', 
-                    error="Username already exists",
-                    users=users, 
-                    supervisors=supervisors)
+            insert_query = '''INSERT INTO admin_info (ausername, apass, apost) VALUES (%s, %s, %s)'''
+            cur.execute(insert_query, (username, hashed_password, user_type))
+            conn.commit()
+            cur.close()
+            conn.close()
+            return redirect(url_for('admin.add_admin_user'))
+        except Exception as e:
+            # Error handling without print
+            cur.close()
+            conn.close()
+            users = get_users()
+            return render_template('admin/add_user_form.html', 
+                error="Error adding admin",
+                users=users)
 
-            try:
-                hashed_password = generate_password_hash(password)
-                insert_query = '''INSERT INTO admin_info (ausername, apass, apost) VALUES (%s, %s, %s)'''
-                cur.execute(insert_query, (username, hashed_password, user_type))
-                conn.commit()
-                cur.close()
-                conn.close()
-                return redirect(url_for('admin.add_admin_user'))
-            except Exception as e:
-                print(f"Error adding admin: {e}")
-                cur.close()
-                conn.close()
-                users, supervisors = get_users_and_supervisors()
-                return render_template('admin/add_user_form.html', 
-                    error="Error adding admin",
-                    users=users, 
-                    supervisors=supervisors)
-
-    users, supervisors = get_users_and_supervisors()
-    return render_template('admin/add_user_form.html', users=users, supervisors=supervisors)
+    users = get_users()
+    return render_template('admin/add_user_form.html', users=users)
 
 @admin.route('/admin/change-password', methods=['POST'])
 @admin_required
@@ -912,7 +894,7 @@ def change_password():
         conn.close()
         return redirect(url_for('admin.add_admin_user'))
     except Exception as e:
-        print(f"Error changing password: {e}")
+        # Error handling without print
         cur.close()
         conn.close()
         return redirect(url_for('admin.add_admin_user'))
@@ -928,13 +910,31 @@ def delete_user(username):
 
     conn, cur = db_connection()
     try:
-        query = '''DELETE FROM admin_info WHERE ausername = %s'''
-        cur.execute(query, (username,))
+        # Check if the user is a supervisor
+        check_query = '''SELECT apost FROM admin_info WHERE ausername = %s'''
+        cur.execute(check_query, (username,))
+        user_data = cur.fetchone()
+        
+        if user_data and user_data[0].lower() == 'supervisor':
+            # Delete supervisor expenditures
+            cur.execute('''DELETE FROM supervisor_expenditure WHERE supervisor_name = %s''', (username,))
+            
+            # Delete supervisor tasks
+            cur.execute('''DELETE FROM task_assignments WHERE supervisor_name = %s''', (username,))
+            
+            # Delete from supervisor_details
+            cur.execute('''DELETE FROM supervisor_details WHERE super_name = %s''', (username,))
+        
+        # Finally delete from admin_info
+        cur.execute('''DELETE FROM admin_info WHERE ausername = %s''', (username,))
+        
         conn.commit()
-        cur.close()
-        conn.close()
+        flash("User deleted successfully")
     except Exception as e:
-        print(f"Error deleting user: {e}")
+        conn.rollback()
+        # Error handling without print
+        flash(f"Error deleting user: {str(e)}", "error")
+    finally:
         cur.close()
         conn.close()
     
@@ -959,7 +959,8 @@ def update_task():
             cur.execute(query, (status, remarks, task_id))
             conn.commit()
         except Exception as e:
-            print(f"Error updating task: {e}")
+            # Error handling without print
+            pass
         finally:
             cur.close()
             conn.close()
@@ -988,15 +989,14 @@ def supervisor_expenditurelist(supervisor_name):
             date=row[3].strftime('%Y-%m-%d')
         ) for row in cur.fetchall()]
     except Exception as e:
-        print(f"Error fetching data: {e}")
+        # Error handling without print
+        pass
     finally:
         cur.close()
         conn.close()
     return render_template('admin/supervisor_expenditure_list.html', 
                          supervisor_name=supervisor_name,
                          expenditures=expenditures)
-
-
 
 @admin.route('/supervisor/expenditure/<supervisor_name>', methods=['GET', 'POST'])
 @admin_required
@@ -1020,7 +1020,8 @@ def supervisor_expenditure(supervisor_name):
             cur.execute(query, (supervisor_name, project_name, amount, description))
             conn.commit()
         except Exception as e:
-            print(f"Error submitting expenditure: {e}")
+            # Error handling without print
+            pass
     projects = []
     expenditures = []
     try:
@@ -1046,7 +1047,8 @@ def supervisor_expenditure(supervisor_name):
             date=row[3].strftime('%Y-%m-%d')
         ) for row in cur.fetchall()]
     except Exception as e:
-        print(f"Error fetching data: {e}")
+        # Error handling without print
+        pass
     finally:
         cur.close()
         conn.close()
@@ -1080,7 +1082,8 @@ def all_expenditures():
             date=row[4].strftime('%Y-%m-%d')
         ) for row in cur.fetchall()]
     except Exception as e:
-        print(f"Error fetching expenditures: {e}")
+        # Error handling without print
+        pass
     finally:
         cur.close()
         conn.close()
@@ -1335,10 +1338,6 @@ def delete_client_payment():
             amount_str = request.form.get('amount')
             mode_of_payment = request.form.get('mode_of_payment')
             
-            # Print received values for debugging
-            print(f"DELETE PAYMENT - Client: {client_name}, Project: {project_name}")
-            print(f"Date: {payment_date}, Amount: {amount_str}, Mode: {mode_of_payment}")
-            
             # Convert amount to float
             amount = None
             if amount_str:
@@ -1347,9 +1346,9 @@ def delete_client_payment():
                     if amount_str.startswith('₹'):
                         amount_str = amount_str[1:].strip()
                     amount = float(amount_str.replace(',', ''))
-                    print(f"Converted amount: {amount}")
                 except ValueError:
-                    print(f"Failed to convert amount: {amount_str}")
+                    # Handle conversion error without print
+                    pass
             
             conn, cur = db_connection()
             
@@ -1365,44 +1364,35 @@ def delete_client_payment():
                     date_obj = datetime.strptime(payment_date, '%Y-%m-%d')
                     query += " AND date = %s"
                     params.append(date_obj.strftime('%Y-%m-%d'))
-                    print(f"Added date condition: {date_obj.strftime('%Y-%m-%d')}")
                 except ValueError:
-                    print(f"Invalid date format: {payment_date}")
-                    # If date format is invalid, don't add it to the query
+                    # Handle date format error without print
+                    pass
             
             # Optional: Add amount condition if available
             if amount is not None:
                 query += " AND amount = %s"
                 params.append(amount)
-                print(f"Added amount condition: {amount}")
             
             # Optional: Add mode condition if available
             if mode_of_payment and mode_of_payment != 'null' and mode_of_payment != '-':
                 query += " AND mode_of_payment = %s"
                 params.append(mode_of_payment)
-                print(f"Added mode condition: {mode_of_payment}")
             
             # Execute query and commit
-            print(f"Executing query: {query}")
-            print(f"With parameters: {params}")
-            
             cur.execute(query, params)
             deleted_count = cur.rowcount
             
             if deleted_count > 0:
                 conn.commit()
                 flash(f"Successfully deleted {deleted_count} payment(s)")
-                print(f"Deleted {deleted_count} payment(s)")
             else:
                 flash("No payments found matching the criteria", "error")
-                print("No matching payments found")
             
             cur.close()
             conn.close()
             
         except Exception as e:
             flash(f"Error deleting payment: {str(e)}", "error")
-            print(f"Exception during deletion: {str(e)}")
         
         return redirect(url_for('admin.delete_entries'))
 
@@ -1845,7 +1835,6 @@ def edit_supplier_bill():
             
         except Exception as e:
             flash(f"Error updating supplier bill: {str(e)}", "error")
-            print(f"Exception during supplier bill update: {str(e)}")
         
         return redirect(url_for('admin.delete_entries'))
 
@@ -1925,7 +1914,6 @@ def edit_contractor_bill():
             
         except Exception as e:
             flash(f"Error updating contractor bill: {str(e)}", "error")
-            print(f"Exception during contractor bill update: {str(e)}")
         
         return redirect(url_for('admin.delete_entries'))
 
@@ -2006,6 +1994,5 @@ def edit_client_payment():
             
         except Exception as e:
             flash(f"Error updating client payment: {str(e)}", "error")
-            print(f"Exception during client payment update: {str(e)}")
         
         return redirect(url_for('admin.delete_entries'))

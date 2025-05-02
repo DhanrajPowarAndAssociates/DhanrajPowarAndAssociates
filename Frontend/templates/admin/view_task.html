@@ -15,6 +15,7 @@
                         <th>Supervisor Name</th>
                         <th>Project</th>
                         <th>Description</th>
+                        <th>Remarks</th>
                         <th>Start Date</th>
                         <th>Status</th>
                     </tr>
@@ -25,6 +26,7 @@
                         <td>{{ task.supervisor_name }}</td>
                         <td>{{ task.project }}</td>
                         <td>{{ task.description }}</td>
+                        <td class="remarks">{{ task.remarks if task.remarks else '-' }}</td>
                         <td>{{ task.start_date }}</td>
                         <td><span class="status {{ task.status|lower }}">{{ task.status }}</span></td>
                     </tr>
@@ -35,9 +37,52 @@
     </main>
 </div>
 
+<style>
+    td.remarks {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    td.remarks:hover {
+        white-space: normal;
+        overflow: visible;
+        cursor: pointer;
+    }
+    
+    .status.completed {
+        background-color: #28a745;
+        color: white;
+    }
+    
+    .status.ongoing {
+        background-color: #ffc107;
+        color: black;
+    }
+    
+    .status.pending {
+        background-color: #17a2b8;
+        color: white;
+    }
+</style>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     console.log("View Tasks Page Loaded!");
+    
+    // Add click functionality to remarks cells
+    const remarkCells = document.querySelectorAll('td.remarks');
+    remarkCells.forEach(cell => {
+        cell.addEventListener('click', function() {
+            this.classList.toggle('expanded');
+            if (this.classList.contains('expanded')) {
+                this.style.whiteSpace = 'normal';
+            } else {
+                this.style.whiteSpace = 'nowrap';
+            }
+        });
+    });
 });
 </script>
 {% endblock %}
