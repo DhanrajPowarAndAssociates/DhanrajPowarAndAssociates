@@ -63,14 +63,14 @@ def new_user():
     if request.method == 'POST':
         location = f"{request.form['address']}, {request.form['city']}, {request.form['state']} - {request.form['pincode']}"
         customer = {
-            'name': request.form['name'],
+            'name': request.form['name'].strip(),
             'location': location,
             'email': request.form['email'],
             'phone': request.form['phone']
         }
         conn,cur=db_connection()
         query='''INSERT INTO client_details(c_name,c_address,c_email,c_phone) VALUES (%s,%s,%s,%s)'''
-        cur.execute(query,(customer['name'],customer['location'],customer['email'],customer['phone']))
+        cur.execute(query,(customer['name'].strip(),customer['location'],customer['email'],customer['phone']))
         conn.commit()
         conn.close()
         cur.close()
@@ -121,7 +121,7 @@ def new_project():
     if request.method == 'POST':
         location = f"{request.form['p_address']}, {request.form['p_city']}, {request.form['p_state']} - {request.form['p_pincode']}"
         project = {
-            'client_name': request.form['client_name'],
+            'client_name': request.form['client_name'].strip(),
             'name': request.form['project_name'],
             'location': location,
             'start_date': request.form['start_date'],
@@ -145,7 +145,7 @@ def new_project():
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)'''
 
         cur.execute(query, (
-            project['name'],
+            project['name'].strip(),
             project['location'],
             project['start_date'],
             project['completion_date'],
@@ -172,7 +172,7 @@ def new_contractor():
     if request.method == 'POST':
         location = f"{request.form['address']}, {request.form['city']}, {request.form['state']} - {request.form['pincode']}"
         contractor = {
-            'name': request.form['name'],
+            'name': request.form['name'].strip(),
             'location': location,
             'email': request.form['email'],
             'phone': request.form['phone'],
@@ -181,7 +181,7 @@ def new_contractor():
         print("New Contractor Details:", contractor)
         conn,cur=db_connection()
         query='''INSERT INTO contractors_details(cont_name,caddress,email,phone_no,gstin) VALUES (%s,%s,%s,%s,%s)'''
-        cur.execute(query,(contractor['name'],contractor['location'],contractor['email'],contractor['phone'],contractor['gstin']))
+        cur.execute(query,(contractor['name'].strip(),contractor['location'],contractor['email'],contractor['phone'],contractor['gstin']))
         conn.commit()
         conn.close()
         cur.close()
@@ -312,6 +312,10 @@ def all_projects(uid):
     query='''select p_name,p_location,start_date,end_date,design_concept,project_type FROM project_details WHERE c_name=%s'''
     cur.execute(query,(uid,))
     data=cur.fetchall()
+    cur.close()
+    conn.close()
+    print(dict(uid=uid))
+    print(data)
     project_dict = [dict(p_name=row[0], p_location=row[1], start_date=row[2], end_date=row[3], design_concept=row[4], project_type=row[5]) for row in data]
     return render_template("admin/project_list.html", uid=uid, projects=project_dict)
 
@@ -619,7 +623,7 @@ def get_projects(client_name):
 @admin_required
 def new_supervisor():
     if request.method == 'POST':
-        supervisor_name = request.form['name']
+        supervisor_name = request.form['name'].strip()
         
         # Check if supervisor already exists
         conn, cur = db_connection()
@@ -657,7 +661,7 @@ def new_supervisor():
             query = '''INSERT INTO supervisor_details(super_name, super_address, super_email, phone_no, "super_Password") 
                       VALUES (%s, %s, %s, %s, %s)'''
             cur.execute(query, (
-                supervisor['name'],
+                supervisor['name'].strip(),
                 supervisor['location'],
                 supervisor['email'],
                 supervisor['phone'],
